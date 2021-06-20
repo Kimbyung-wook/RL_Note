@@ -1,0 +1,2 @@
+model_checkpoint_path: "pendulum_sac"
+all_model_checkpoint_paths: "pendulum_sac"
