@@ -1,0 +1,6 @@
+drawnow
+matplotlib
+scipy
+gym
+box2d
+ipykernel

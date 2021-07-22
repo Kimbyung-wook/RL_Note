@@ -1,0 +1,7 @@
+tensorflow-gpu=2.4.0
+drawnow
+matplotlib
+scipy
+gym
+box2d
+ipykernel
