@@ -1,2 +1,2 @@
-model_checkpoint_path: "LunarLanderv2_dqn_TF"
-all_model_checkpoint_paths: "LunarLanderv2_dqn_TF"
+model_checkpoint_path: "LunarLanderv2_a2c_TF"
+all_model_checkpoint_paths: "LunarLanderv2_a2c_TF"
