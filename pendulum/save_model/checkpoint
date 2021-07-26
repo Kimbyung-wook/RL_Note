@@ -1,2 +1,2 @@
-model_checkpoint_path: "pendulum_sac"
-all_model_checkpoint_paths: "pendulum_sac"
+model_checkpoint_path: "pendulum_ddpg_TF_critic"
+all_model_checkpoint_paths: "pendulum_ddpg_TF_critic"
