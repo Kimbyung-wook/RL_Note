@@ -2,7 +2,7 @@
 # https://github.com/rlcode/per
 import random
 import numpy as np
-from sum_tree import SumTree
+from utils.sum_tree import SumTree
 
 class PrioritizedMemory:  # stored as ( s, a, r, s_ ) in SumTree
     e = 0.01
