@@ -19,7 +19,7 @@ class PrioritizedMemory:  # stored as ( s, a, r, s_ ) in SumTree
     def _get_priority(self, error):
         return (np.abs(error) + self.e) ** self.a
 
-    def add(self, sample):
+    def append(self, sample):
         max_p = np.max(self.tree.tree[-self.tree.capacity:])
         if max_p == 0:
             max_p = self.abs_err_upper
