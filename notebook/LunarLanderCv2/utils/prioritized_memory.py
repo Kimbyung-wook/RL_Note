@@ -9,6 +9,8 @@ class PrioritizedMemory:  # stored as ( s, a, r, s_ ) in SumTree
     a = 0.6
     beta = 0.4
     beta_increment_per_sampling = 0.001
+    epsilon = 0.000001  # Proportional Prioritization
+    abs_err_upper = 1.000
 
     def __init__(self, capacity):
         self.tree = SumTree(capacity)
@@ -17,11 +19,14 @@ class PrioritizedMemory:  # stored as ( s, a, r, s_ ) in SumTree
     def _get_priority(self, error):
         return (np.abs(error) + self.e) ** self.a
 
-    def add(self, error, sample):
-        p = self._get_priority(error)
-        self.tree.add(p, sample)
+    def add(self, sample):
+        max_p = np.max(self.tree.tree[-self.tree.capacity:])
+        if max_p == 0:
+            max_p = self.abs_err_upper
+        # p = self._get_priority(error)
+        self.tree.add(max_p, sample)
 
-    def sample(self, n):
+    def sample(self, n:int):
         batch = []
         idxs = []
         segment = self.tree.total() / n
@@ -45,8 +50,10 @@ class PrioritizedMemory:  # stored as ( s, a, r, s_ ) in SumTree
 
         return batch, idxs, is_weight
 
-    def update(self, idx, error):
-        p = self._get_priority(error)
+    def update(self, idx:int, error:float):
+        # Proportional Prioritization
+        p = self._get_priority(abs(error) + self.epsilon)
+        # Rank-based Prioritization
         self.tree.update(idx, p)
         
     def batch_update(self, idxs, errors):
