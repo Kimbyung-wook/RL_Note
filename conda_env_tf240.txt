@@ -1,4 +1,5 @@
 tensorflow-gpu==2.4.0
+tensorflow_probability==0.12.0
 drawnow
 matplotlib
 scipy
