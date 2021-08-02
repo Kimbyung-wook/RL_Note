@@ -8,3 +8,9 @@ https://github.com/rlcode/reinforcement-learning-kr-v2<br>
 https://keras.io/examples/rl/ddpg_pendulum/ <br>
 https://github.com/InSpaceAI/RL-Zoo/blob/master/DDPG.py<br>
 
+## 파일 구조 설명
+
+notebook : jupyter notebook 파일로 되어있음. pys/utils 의 utility 파일을 사용한다.
+
+pys : python 파일로 되어있음.<br>
+pys/utils : python utility 파일로 구성. memory, noise 관련한 모듈<br>
