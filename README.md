@@ -19,7 +19,7 @@ https://keras.io/examples/rl/ddpg_pendulum/ <br>
 https://horomary.hatenablog.com/entry/2020/06/26/003806 <br>
 https://pasus.tistory.com/138 <br>
 
-* SAC
+* SAC <br>
 https://github.com/pranz24/pytorch-soft-actor-critic/blob/master/model.py<br>
 
 * PER <br>
