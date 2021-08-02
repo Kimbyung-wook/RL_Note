@@ -20,6 +20,11 @@ class PrioritizedMemory:  # stored as ( s, a, r, s_ ) in SumTree
         return (np.abs(error) + self.e) ** self.a
 
     def append(self, sample):
+        '''
+        >>> HOW TO USE
+        transition = (state, action, reward, next_state, done)
+        ReplayMemory.append(transition)
+        '''
         max_p = np.max(self.tree.tree[-self.tree.capacity:])
         if max_p == 0:
             max_p = self.abs_err_upper
