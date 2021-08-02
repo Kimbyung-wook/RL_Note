@@ -1,6 +1,7 @@
 # RL_Note
 Tensorflow 2.4.0 기준으로 작동 확인했습니다.
 현재 SAC + HER 공부중입니다.
+개인 취미로 RNN + RL 을 해보고 싶습니다.
 
 위 저장소는 다음을 참고했습니다.<br>
 
@@ -30,6 +31,9 @@ https://github.com/takoika/PrioritizedExperienceReplay/blob/master/proportional.
 * HER <br>
 
 * Actor-Critic Series <br>
+
+* Recurrent NN + RL <br>
+https://github.com/AntoineTheb/RNN-RL
 
 This repo is refered from below repos<br>
 
