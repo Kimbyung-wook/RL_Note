@@ -2,11 +2,11 @@
 Tensorflow 2.4.0 기준으로 작동 확인했습니다.
 현재 SAC + HER 공부중입니다.
 
-위 저장소는 다음의 저장소를 참고했습니다.<br>
+위 저장소는 다음을 참고했습니다.<br>
 
 * General
 
-* DQN
+* DQN <br>
 https://github.com/yc930401/Actor-Critic-pytorch/blob/master/Actor-Critic.py <br>
 https://github.com/bentrevett/pytorch-rl/blob/master/2%20-%20Actor%20Critic%20%5BCartPole%5D.ipynb <br>
 
@@ -22,14 +22,14 @@ https://pasus.tistory.com/138 <br>
 * SAC
 https://github.com/pranz24/pytorch-soft-actor-critic/blob/master/model.py<br>
 
-* PER
+* PER <br>
 https://ropiens.tistory.com/86 <br>
 https://github.com/rlcode/per <br>
 https://github.com/takoika/PrioritizedExperienceReplay/blob/master/proportional.py <br>
 
-* HER
+* HER <br>
 
-* Actor-Critic Series
+* Actor-Critic Series <br>
 
 This repo is refered from below repos<br>
 
