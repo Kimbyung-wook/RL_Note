@@ -65,7 +65,7 @@ class PrioritizedMemory:  # stored as ( s, a, r, s_ ) in SumTree
         
     def batch_update(self, idxs, errors):
         for i in range(len(idxs)):
-            p = self._get_priority(errors[i])
+            p = self._get_priority(abs(errors[i]))
             self.tree.update(idxs[i], p)
 
     def __len__(self):
