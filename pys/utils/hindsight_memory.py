@@ -1,8 +1,8 @@
 import numpy as np
 import random
-import memory
+from .memory import ReplayMemory
 
-class HindsightMemory(memory):
+class HindsightMemory(ReplayMemory):
     def __init__(self, capacity, replay_strategy, replay_k, reward_func=None):
         self.capacity = capacity
         self.replay_strategy = replay_strategy

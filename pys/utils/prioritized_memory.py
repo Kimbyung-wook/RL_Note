@@ -1,15 +1,20 @@
 # it's from
 # https://github.com/rlcode/per
+# Find RL_Note path and append sys path
+
 import random
 import numpy as np
-from utils.sum_tree import SumTree
+from .sum_tree import SumTree
 
-class PrioritizedMemory:  # stored as ( s, a, r, s_ ) in SumTree
+class ProportionalPrioritizedMemory:  # stored as ( s, a, r, s_ ) in SumTree
     e = 0.01
-    a = 0.6
+    alpha = 0.6     # For proportional variant
     beta = 0.4
+    # a = 0.7     # For rank-based variant
+    # beta = 0.5
+    alpha_increment_per_sampling = 0.001
     beta_increment_per_sampling = 0.001
-    epsilon = 0.000001  # Proportional Prioritization
+    epsilon = 0.0001  # Proportional Prioritization
     abs_err_upper = 1.000
 
     def __init__(self, capacity):
@@ -17,16 +22,19 @@ class PrioritizedMemory:  # stored as ( s, a, r, s_ ) in SumTree
         self.capacity = capacity
 
     def _get_priority(self, error):
-        return (np.abs(error) + self.e) ** self.a
+        '''
+        It is NOT Upper P(i)
+        '''
+        return (np.abs(error) + self.e) ** self.alpha
 
     def append(self, sample):
         '''
         >>> HOW TO USE
-        transition = (state, action, reward, next_state, done)
+        transition = (state, action, reward, next_state, done, td_error)
         ReplayMemory.append(transition)
         '''
         max_p = np.max(self.tree.tree[-self.tree.capacity:])
-        if max_p == 0:
+        if max_p <= 0.001:
             max_p = self.abs_err_upper
         # p = self._get_priority(error)
         self.tree.add(max_p, sample)
@@ -37,6 +45,7 @@ class PrioritizedMemory:  # stored as ( s, a, r, s_ ) in SumTree
         segment = self.tree.total() / n
         priorities = []
 
+        self.alpha = np.min([1., self.alpha + self.alpha_increment_per_sampling])
         self.beta = np.min([1., self.beta + self.beta_increment_per_sampling])
 
         for i in range(n):
@@ -61,10 +70,10 @@ class PrioritizedMemory:  # stored as ( s, a, r, s_ ) in SumTree
         # Rank-based Prioritization
         self.tree.update(idx, p)
         
-    def batch_update(self, idxs, errors):
-        for i in range(len(idxs)):
-            p = self._get_priority(errors[i])
-            self.tree.update(idxs[i], p)
+    # def batch_update(self, idxs, errors):
+    #     for i in range(len(idxs)):
+    #         p = self._get_priority(abs(errors[i]) + self.epsilon)
+    #         self.tree.update(idxs[i], p)
 
     def __len__(self):
         return self.tree.n_entries

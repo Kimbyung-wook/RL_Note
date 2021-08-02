@@ -1,2 +1,2 @@
-model_checkpoint_path: "cartpole_dqn_TF"
-all_model_checkpoint_paths: "cartpole_dqn_TF"
+model_checkpoint_path: "cartpole_dqn_per_TF"
+all_model_checkpoint_paths: "cartpole_dqn_per_TF"
