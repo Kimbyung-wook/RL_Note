@@ -2,6 +2,16 @@ import numpy as np
 import random
 
 class ReplayMemory():
+    '''
+    Memory Base
+
+        append
+
+        sample
+
+        __len__
+    
+    '''
     def __init__(self, capacity):
         self.capacity = capacity
         self.buffer = []
