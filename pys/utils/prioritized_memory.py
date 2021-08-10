@@ -27,7 +27,7 @@ class ProportionalPrioritizedMemory:  # stored as ( s, a, r, s_ ) in SumTree
         '''
         return (np.abs(error) + self.e) ** self.alpha
 
-    def append(self, sample):
+    def append(self, sample:list):
         '''
         >>> HOW TO USE
         transition = (state, action, reward, next_state, done, td_error)
@@ -36,17 +36,15 @@ class ProportionalPrioritizedMemory:  # stored as ( s, a, r, s_ ) in SumTree
         max_p = np.max(self.tree.tree[-self.tree.capacity:])
         if max_p <= 0.001:
             max_p = self.abs_err_upper
-        # p = self._get_priority(error)
+        # max_p = self._get_priority(error)
         self.tree.add(max_p, sample)
 
     def sample(self, n:int):
-        batch = []
-        idxs = []
+        batch,idxs,priorities = [], [], []
         segment = self.tree.total() / n
-        priorities = []
 
-        self.alpha = np.min([1., self.alpha + self.alpha_increment_per_sampling])
-        self.beta = np.min([1., self.beta + self.beta_increment_per_sampling])
+        self.alpha = np.max([0., self.alpha - self.alpha_increment_per_sampling])
+        self.beta  = np.min([1., self.beta  + self.beta_increment_per_sampling])
 
         for i in range(n):
             a = segment * i
@@ -67,13 +65,7 @@ class ProportionalPrioritizedMemory:  # stored as ( s, a, r, s_ ) in SumTree
     def update(self, idx:int, error:float):
         # Proportional Prioritization
         p = self._get_priority(abs(error) + self.epsilon)
-        # Rank-based Prioritization
         self.tree.update(idx, p)
-        
-    # def batch_update(self, idxs, errors):
-    #     for i in range(len(idxs)):
-    #         p = self._get_priority(abs(errors[i]) + self.epsilon)
-    #         self.tree.update(idxs[i], p)
 
     def __len__(self):
         return self.tree.n_entries
