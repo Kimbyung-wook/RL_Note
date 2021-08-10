@@ -7,7 +7,6 @@ import numpy as np
 from .sum_tree import SumTree
 
 class ProportionalPrioritizedMemory:  # stored as ( s, a, r, s_ ) in SumTree
-    e = 0.01
     alpha = 0.6     # For proportional variant
     beta = 0.4
     # a = 0.7     # For rank-based variant
@@ -25,7 +24,7 @@ class ProportionalPrioritizedMemory:  # stored as ( s, a, r, s_ ) in SumTree
         '''
         It is NOT Upper P(i)
         '''
-        return (np.abs(error) + self.e) ** self.alpha
+        return (np.abs(error) + self.epsilon) ** self.alpha
 
     def append(self, sample:list):
         '''
@@ -40,7 +39,7 @@ class ProportionalPrioritizedMemory:  # stored as ( s, a, r, s_ ) in SumTree
         self.tree.add(max_p, sample)
 
     def sample(self, n:int):
-        batch,idxs,priorities = [], [], []
+        batch, idxs, priorities = [], [], []
         segment = self.tree.total() / n
 
         self.alpha = np.max([0., self.alpha - self.alpha_increment_per_sampling])
