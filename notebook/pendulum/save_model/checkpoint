@@ -1,0 +1,2 @@
+model_checkpoint_path: "Pendulum-v0_SAC_ER_TF_critic2"
+all_model_checkpoint_paths: "Pendulum-v0_SAC_ER_TF_critic2"
