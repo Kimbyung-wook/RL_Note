@@ -1,51 +1,124 @@
-import numpy as np
 import random
-from .memory import ReplayMemory
+import numpy as np
 from collections import deque
 
-class HindsightMemory(ReplayMemory):
-    def __init__(self, capacity, replay_strategy, replay_k, reward_func=None):
+class HindsightMemory():
+    def __init__(self, capacity:int, replay_strategy:str = 'random', replay_n:int = 8, reward_func = None, done_func = None):
+        # Basic member
+        self.buffer = []
+        self.buffer_idx = 0
         self.capacity = capacity
-        self.replay_strategy = replay_strategy
-        self.replay_k = replay_k
-
+        # HER members
+        self.replay_n = replay_n
+        self.replay_strategy = replay_strategy.lower()
+        self.episode_buffer = []
+        self.episode_buffer_idx = 0
         self.reward_func = reward_func
-    
-    def append(self, transition):
+        self.done_func = done_func
+
+    def append(self, sample:list) -> None:
         '''
         >>> HOW TO USE
-        transition = (state, action, reward, next_state, done, goal, instace_goal)
+        transition = (state, action, reward, next_state, done, goal)
         ReplayMemory.append(transition)
         '''
-
-        tmp = 0
-        # for saving a episode
-        done = transition[0][4] # get episode status, is it done?
-        if(done == True): # Change episode index 
-            tmp = 1
-        else: # Keep episode index
-            tmp = 1
-
-        # Stack a transition
         self.buffer_idx = self.buffer_idx % self.capacity
         if(len(self.buffer) < self.capacity):
-            self.buffer += [transition]
+            self.buffer += [sample]
         else:
-            self.buffer[self.buffer_idx] = transition
+            self.buffer[self.buffer_idx] = sample
         self.buffer_idx += 1
 
-    def sample(self, episode_batch, batch_size):
+        self.add_her_transition(sample)
+        done = bool(sample[4])
+        if done:
+            # print('Episode end           : buffer size : ', len(self.buffer), '/ and a epi steps : ', len(self.episode_buffer))
+            self.generate_HER_transition()
+            # print('after HER operation   : buffer size : ', len(self.buffer), '/ and a epi steps : ', len(self.episode_buffer))
+            self.reset_current_episode()
+            # print('reset current episode : buffer size : ', len(self.buffer), '/ and a epi steps : ', len(self.episode_buffer))
 
-        if(self.replay_strategy == 'final'):
-            transitions = (1,2,3)
-        elif(self.replay_strategy == 'future'):
-            transitions = (1,2,3)
-        elif(self.replay_strategy == 'random'):
-            transitions = random.sample(self.buffer,batch_size)
-        elif(self.replay_strategy == 'episode'):
-            transitions = (1,2,3)
-        else: # Just Experience Replaying
-            transitions = random.sample(self.buffer,batch_size)
+    # get samples from priority memory according mini batch size n
+    def sample(self, n:int) -> list:
+        '''
+        >>> HOW TO USE
+        mini_batch = ReplayMemory.sample(number_of_samples)
+
+        # Sampling from the memory
+        states      = np.array([sample[0] for sample in mini_batch])
+        actions     = np.array([sample[1] for sample in mini_batch])
+        rewards     = np.array([sample[2] for sample in mini_batch])
+        next_states = np.array([sample[3] for sample in mini_batch])
+        dones       = np.array([sample[4] for sample in mini_batch])
+        goals       = np.array([sample[5] for sample in mini_batch])
+        '''
+        return random.sample(self.buffer,n)
+
+    def __len__(self):
+        return len(self.buffer)
+
+    '''
+    HER Operation
+    '''
+
+    def add_her_transition(self, sample:list) -> None:
+        '''
+            append a transition to current episode buffer
+        '''
+        self.episode_buffer += [sample]
+        self.episode_buffer_idx += 1
+
+    def reset_current_episode(self) -> None:
+        '''
+            reset current episode buffer
+        '''
+        self.episode_buffer = []
+        self.episode_buffer_idx = 0
+
+    def _sample_additional_goal(self):
+        '''
+            sample additional goal from current episode buffer
+        '''
+        if self.replay_strategy == 'final': # Get final state
+            additional_goals= np.array([self.episode_buffer[-1][0]])
+
+        elif self.replay_strategy == 'future': 
+            # ???? I dont understand
+            mini_batch      = self.episode_buffer[-1]
+            additional_goals= np.array([sample[0] for sample in mini_batch])
+
+        elif self.replay_strategy == 'episode': # get states in current episode
+            mini_batch      = random.sample(self.episode_buffer,self.replay_n)
+            additional_goals= np.array([sample[0] for sample in mini_batch])
+
+        elif self.replay_strategy == 'random': # get states in buffer
+            mini_batch      = random.sample(self.buffer,self.replay_n)
+            additional_goals= np.array([sample[0] for sample in mini_batch])
+
+        # print('additional_goals ',additional_goals)
+        return additional_goals
+
+    def generate_HER_transition(self) -> None:
+        # Replay current episode
+        for episode in self.episode_buffer:
+            state       = episode[0]
+            action      = episode[1]
+            next_state  = episode[3]
+            done        = episode[4]
+            # Sample a set of additional goals for replay G := S (current episode)
+            additional_goals = self._sample_additional_goal()
+            # print('additional_goals ',additional_goals)
+            # print('additional_goals ',len(additional_goals))
+            for i in range(len(additional_goals)):
+                additional_goal = additional_goals[i]
+                # Do achieve?
+                do_achieve = np.array([self.done_func(next_state)],dtype=np.float32)
+                new_reward = np.array([self.reward_func(state, action, next_state, done)],dtype=np.float32)
+                transition = (state, action, new_reward, next_state, do_achieve, additional_goal)
+                # Store the transition to Buffer
+                self.buffer.append(transition)
 
 
-        return transitions
+
+
+

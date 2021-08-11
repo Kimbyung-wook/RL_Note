@@ -2,20 +2,11 @@ import numpy as np
 import random
 
 class ReplayMemory():
-    '''
-    Memory Base
-
-        append
-
-        sample
-
-        __len__
-    
-    '''
     def __init__(self, capacity):
-        self.capacity = capacity
+        # Basic member
         self.buffer = []
         self.buffer_idx = 0
+        self.capacity = capacity
 
     def append(self, transition:list):
         '''
@@ -36,10 +27,10 @@ class ReplayMemory():
         mini_batch = ReplayMemory.sample(number_of_samples)
 
         # Sampling from the memory
-        states      = np.array([sample[0][0] for sample in mini_batch])
+        states      = np.array([sample[0] for sample in mini_batch])
         actions     = np.array([sample[1] for sample in mini_batch])
         rewards     = np.array([sample[2] for sample in mini_batch])
-        next_states = np.array([sample[3][0] for sample in mini_batch])
+        next_states = np.array([sample[3] for sample in mini_batch])
         dones       = np.array([sample[4] for sample in mini_batch])
         '''
         return random.sample(self.buffer,n)
