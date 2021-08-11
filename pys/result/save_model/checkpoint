@@ -1,0 +1,2 @@
+model_checkpoint_path: "Pendulum-v0_DDPG_HER_RANDOM_TF_critic"
+all_model_checkpoint_paths: "Pendulum-v0_DDPG_HER_RANDOM_TF_critic"
