@@ -80,7 +80,7 @@ class HindsightMemory():
             sample additional goal from current episode buffer
         '''
         if self.replay_strategy == 'final': # Get final state
-            additional_goals= np.array([self.episode_buffer[-1][0]])
+            additional_goals= np.array([self.episode_buffer[-1][0]],dtype=np.float32)
 
         elif self.replay_strategy == 'future': 
             # ???? I dont understand
