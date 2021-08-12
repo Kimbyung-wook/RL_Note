@@ -12,7 +12,7 @@ env_configs = {
         'END_SCORE':-200
     },
     'LunarLanderContinuous-v2':{
-        'EPISODES':10000,
+        'EPISODES':2000,
         'END_SCORE':200
     }
 }

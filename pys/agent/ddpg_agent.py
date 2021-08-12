@@ -22,8 +22,8 @@ class DDPGAgent:
 
         # Experience Replay
         self.batch_size = cfg["BATCH_SIZE"]
-        self.train_start = 2000
-        self.buffer_size = 50000
+        self.train_start = cfg["TRAIN_START"]
+        self.buffer_size = cfg["MEMORY_SIZE"]
         if self.er_type == "ER":
             self.memory = ReplayMemory(capacity=self.buffer_size)
         elif self.er_type == "PER":

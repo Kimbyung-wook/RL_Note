@@ -103,6 +103,7 @@ class HindsightMemory():
         for episode in self.episode_buffer:
             state       = episode[0]
             action      = episode[1]
+            reward      = episode[2]
             next_state  = episode[3]
             done        = episode[4]
             # Sample a set of additional goals for replay G := S (current episode)
@@ -113,7 +114,7 @@ class HindsightMemory():
                 additional_goal = additional_goals[i]
                 # Do achieve?
                 do_achieve = np.array([self.done_func(next_state)],dtype=np.float32)
-                new_reward = np.array([self.reward_func(state, action, next_state, done)],dtype=np.float32)
+                new_reward = np.array([self.reward_func(state, action, reward, next_state, done)],dtype=np.float32)
                 transition = (state, action, new_reward, next_state, do_achieve, additional_goal)
                 # Store the transition to Buffer
                 self.buffer.append(transition)
