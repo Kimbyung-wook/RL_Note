@@ -39,7 +39,23 @@ This repo is refered from below repos<br>
 
 ## 파일 구조 설명
 
-notebook : jupyter notebook 파일로 되어있음. pys/utils 의 utility 파일을 사용한다.
+notebook<br>
+jupyter notebook 파일로 되어있음. pys/utils 의 utility 파일을 사용한다.<br>
+대부분 pys를 개발하기 전에 prototyping을 위해서 jupyter notebook을 이용하여 개발하는 곳이다.
 
 pys : python 파일로 되어있음.<br>
-pys/utils : python utility 파일로 구성. memory, noise 관련한 모듈<br>
+discrete_gym.py/ipynb과 continuous_gym.py/ipynb 을 실행하면 gym의 classic control 문제에 대해서 여러 강화학습 알고리즘을 적용해볼 수 있다.<br>
+*.py 파일은 강화학습 알고리즘이나 Experience replay 알고리즘에 대해서 Batch Execution을 통해 알고리즘에 대한 성능 비교를 할 수 있도록 하는 batch 파일이다.
+- agent <br>
+강화학습 알고리즘 모음
+- model <br>
+강화학습을 위한 심층신경망 클래스로 구성<br>
+사용자가 cfg파일을 통해서 심층신경망의 레이어 구조를 결정할 수 있음.
+- utils<br>
+python utility 파일로 구성. memory, noise 관련한 모듈<br>
+현재는 ER, PER, HER이 있으며, HER는 현재 수정 중
+- gyms <br>
+HER를 위해, done과 reward를 계산하는 함수를 넣음
+- result <br>
+환경, 강화학습 알고리즘을 선택하여 구동한 결과물을 모았다.<br>
+이는 결과 데이터인 data, 결과 이미지인 img, 학습된 신경망 save_model 이 있다.
