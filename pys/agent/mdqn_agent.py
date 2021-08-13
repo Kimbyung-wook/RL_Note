@@ -45,8 +45,8 @@ class MDQNAgent:
         self.lo = -1
         
         # Neural Network Architecture
-        self.model        = QNetwork(self.state_size, self.action_size, cfg)
-        self.target_model = QNetwork(self.state_size, self.action_size, cfg)
+        self.model        = QNetwork(self.state_size, self.action_size, cfg["RL"]["NETWORK"])
+        self.target_model = QNetwork(self.state_size, self.action_size, cfg["RL"]["NETWORK"])
         self.optimizer = tf.keras.optimizers.Adam(lr=self.learning_rate)
         self.hard_update_target_model()
         
@@ -135,6 +135,7 @@ class MDQNAgent:
             q = self.model(states)
             one_hot_action = tf.one_hot(actions, self.action_size)
             q = tf.reduce_sum(one_hot_action * q, axis=1)
+            
             # munchausen reward
             target_q = tf.stop_gradient(self.target_model(states))
             target_v = tf.reduce_max(target_q,axis=1)
@@ -148,6 +149,7 @@ class MDQNAgent:
             log_pi = tf.expand_dims(log_pi,axis=1)
             
             term_1st = rewards + self.alpha * self.entropy_tau * tf.clip_by_value(log_pi, clip_value_min=self.lo, clip_value_max=0.0)
+            term_1st = tf.squeeze(term_1st,axis=1)
 
             # munchausen target value y
             target_next_q = tf.stop_gradient(self.target_model(next_states))
@@ -164,6 +166,7 @@ class MDQNAgent:
             target_y = term_1st + term_2nd
             
             # Compute loss
+            td_error = target_y - q
             loss = tf.reduce_mean(tf.square(target_y - q))
             
         grads = tape.gradient(loss, model_params)
