@@ -1,11 +1,9 @@
 import numpy as np
 
-
-
 def pendulum_done(state):
     return False
     
-def pendulum_reward(state, action, reward, next_state, done):
+def pendulum_reward(state, action, reward_old, next_state, done):
     costh   = state[0]
     sinth   = state[1]
     th      = np.arctan2(sinth,costh)

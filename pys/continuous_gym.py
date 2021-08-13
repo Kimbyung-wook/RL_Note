@@ -31,7 +31,6 @@ lists = (
         )
         
 if __name__ == "__main__":
-
     for item in lists:
         cfg = {\
                 # "ENV":"Pendulum-v0",\
