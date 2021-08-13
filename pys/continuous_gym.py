@@ -32,7 +32,9 @@ if __name__ == "__main__":
         cfg = {\
                 # "ENV":"Pendulum-v0",\
                 "ENV":"LunarLanderContinuous-v2",\
-                "RL":item[0],\
+                "RL":{
+                    "ALGORITHM":item[0],\
+                },\
                 "ER":item[1],\
                 "HER":\
                     {
@@ -47,20 +49,20 @@ if __name__ == "__main__":
                 }
         env_config = env_configs[cfg["ENV"]]
         if cfg["ER"] == "HER":
-            FILENAME = cfg["ENV"] + '_' + cfg["RL"] + '_' + cfg["ER"] + '_' + cfg["HER"]["STRATEGY"]
+            FILENAME = cfg["ENV"] + '_' + cfg["RL"]["ALGORITHM"] + '_' + cfg["ER"] + '_' + cfg["HER"]["STRATEGY"]
         else:
-            FILENAME = cfg["ENV"] + '_' + cfg["RL"] + '_' + cfg["ER"]
+            FILENAME = cfg["ENV"] + '_' + cfg["RL"]["ALGORITHM"] + '_' + cfg["ER"]
         EPISODES = env_config["EPISODES"]
         END_SCORE = env_config["END_SCORE"]
         plt.clf()
         figure = plt.gcf()
         figure.set_size_inches(8,6)
         env = gym.make(cfg["ENV"])
-        if cfg["RL"] == "DDPG":
+        if cfg["RL"]["ALGORITHM"] == "DDPG":
             agent = DDPGAgent(env, cfg)
-        elif cfg["RL"] == "TD3":
+        elif cfg["RL"]["ALGORITHM"] == "TD3":
             agent = TD3Agent(env, cfg)
-        elif cfg["RL"] == "SAC":
+        elif cfg["RL"]["ALGORITHM"] == "SAC":
             agent = SACAgent(env, cfg)
 
         scores_avg, scores_raw, episodes, losses = [], [], [], []
@@ -113,7 +115,7 @@ if __name__ == "__main__":
                     plt.plot(episodes, scores_avg, 'b')
                     plt.plot(episodes, scores_raw, 'b', alpha=0.8, linewidth=0.5)
                     plt.xlabel('episode'); plt.ylabel('average score'); plt.grid()
-                    plt.title(cfg["ENV"] +'_' + cfg["RL"] +'_' + cfg["ER"])
+                    plt.title(cfg["ENV"] +'_' + cfg["RL"]["ALGORITHM"] +'_' + cfg["ER"])
                     plt.subplot(312)
                     plt.plot(episodes, critic_mean, 'b.',markersize=3)
                     plt.xlabel('episode'); plt.ylabel('critic loss'); plt.grid()

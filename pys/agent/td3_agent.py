@@ -18,7 +18,7 @@ class TD3Agent:
         self.env_name   = cfg["ENV"]
         self.rl_type    = "TD3"
         self.er_type    = cfg["ER"].upper()
-        self.filename   = cfg["ENV"] + '_' + cfg["RL"] + '_' + cfg["ER"]
+        self.filename   = cfg["ENV"] + '_' + cfg["RL"]["ALGORITHM"] + '_' + cfg["ER"]
 
         # Experience Replay
         self.batch_size = cfg["BATCH_SIZE"]
@@ -35,7 +35,7 @@ class TD3Agent:
                 replay_strategy     = cfg["HER"]["STRATEGY"],\
                 reward_func         = cfg["HER"]["REWARD_FUNC"],\
                 done_func           = cfg["HER"]["DONE_FUNC"])
-            self.filename = cfg["ENV"] + '_' + cfg["RL"] + '_' + cfg["ER"] + '_' + cfg["HER"]["STRATEGY"]
+            self.filename = cfg["ENV"] + '_' + cfg["RL"]["ALGORITHM"] + '_' + cfg["ER"] + '_' + cfg["HER"]["STRATEGY"]
         
         # Hyper params for learning
         self.discount_factor = 0.99
