@@ -153,12 +153,12 @@ class SACAgent:
         if self.show_media_info == False:
             self.show_media_info = True
             print('Start to train, check batch shapes')
-            print('**** shape of mini_batch', np.shape(mini_batch),type(mini_batch))
-            print('**** shape of states', np.shape(states),type(states))
-            print('**** shape of actions', np.shape(actions),type(actions))
-            print('**** shape of rewards', np.shape(rewards),type(rewards))
-            print('**** shape of next_states', np.shape(next_states),type(next_states))
-            print('**** shape of dones', np.shape(dones),type(dones))
+            print('**** shape of mini_batch',   np.shape(mini_batch),   type(mini_batch))
+            print('**** shape of states',       np.shape(states),       type(states))
+            print('**** shape of actions',      np.shape(actions),      type(actions))
+            print('**** shape of rewards',      np.shape(rewards),      type(rewards))
+            print('**** shape of next_states',  np.shape(next_states),  type(next_states))
+            print('**** shape of dones',        np.shape(dones),        type(dones))
             if self.er_type == "HER":
                 goals = tf.convert_to_tensor(np.array([sample[5] for sample in mini_batch]))
                 print('**** shape of goals', np.shape(goals),type(goals))
