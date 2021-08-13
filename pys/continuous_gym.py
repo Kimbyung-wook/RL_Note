@@ -21,13 +21,16 @@ from pys.agent.sac_agent    import SACAgent
 from pys.gyms.functions import lunarlandercontinuous_done as done_function
 from pys.gyms.functions import lunarlandercontinuous_reward as reward_function
 
-lists = (   ('SAC','ER'),('SAC','PER'),('SAC','HER'),\
-            ('TD3','ER'),('TD3','PER'),('TD3','HER'),\
-            ('DDPG','ER'),('DDPG','PER'),('DDPG','HER'),\
+# lists = (   ('SAC','ER'),('SAC','PER'),('SAC','HER'),\
+#             ('TD3','ER'),('TD3','PER'),('TD3','HER'),\
+#             ('DDPG','ER'),('DDPG','PER'),('DDPG','HER'),\
+#         )
+lists = (
+            ('TD3','PER'),\
+            ('DDPG','ER'),('DDPG','PER'),\
         )
         
 if __name__ == "__main__":
-
     for item in lists:
         cfg = {\
                 # "ENV":"Pendulum-v0",\
