@@ -9,8 +9,6 @@ class QNetwork(tf.keras.Model):
         for numbers in self.structure:
             fc = Dense(numbers,activation='relu')
             self.fcs.append(fc)
-        # self.fc1 = Dense(cfg["RL"]["NETWORK"]["LAYER"][0],activation='relu')
-        # self.fc2 = Dense(cfg["RL"]["NETWORK"]["LAYER"][1],activation='relu')
         self.out = Dense(action_size,kernel_initializer=tf.keras.initializers.RandomUniform(-1e-3,1e-3))
 
     def call(self,x):

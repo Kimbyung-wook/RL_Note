@@ -1,2 +1,2 @@
-model_checkpoint_path: "LunarLanderContinuous-v2_SAC_ER_TF_critic2"
-all_model_checkpoint_paths: "LunarLanderContinuous-v2_SAC_ER_TF_critic2"
+model_checkpoint_path: "CartPole-v1_DQN_PER_TF"
+all_model_checkpoint_paths: "CartPole-v1_DQN_PER_TF"

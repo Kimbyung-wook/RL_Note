@@ -14,9 +14,9 @@ class MDQNAgent:
         self.action_size= env.action_space.n
         self.env_name   = cfg["ENV"]
         self.rl_type    = "MDQN"
-        self.er_type    = cfg["ER"].upper()
-        self.filename   = cfg["ENV"] + '_' + cfg["RL"]["ALGORITHM"] + '_' + cfg["ER"]
-        
+        self.er_type    = cfg["ER"]["ALGORITHM"].upper()
+        self.filename   = cfg["ENV"] + '_' + cfg["RL"]["ALGORITHM"] + '_' + cfg["ER"]["ALGORITHM"]
+
         # Experience Replay
         self.batch_size = cfg["BATCH_SIZE"]
         self.train_start = cfg["TRAIN_START"]
@@ -28,11 +28,11 @@ class MDQNAgent:
         elif self.er_type == "HER":
             self.memory = HindsightMemory(\
                 capacity            = self.buffer_size,\
-                replay_n            = cfg["HER"]["REPLAY_N"],\
-                replay_strategy     = cfg["HER"]["STRATEGY"],\
-                reward_func         = cfg["HER"]["REWARD_FUNC"],\
-                done_func           = cfg["HER"]["DONE_FUNC"])
-            self.filename = cfg["ENV"] + '_' + cfg["RL"]["ALGORITHM"] + '_' + cfg["ER"] + '_' + cfg["HER"]["STRATEGY"]
+                replay_n            = cfg["ER"]["REPLAY_N"],\
+                replay_strategy     = cfg["ER"]["STRATEGY"],\
+                reward_func         = cfg["ER"]["REWARD_FUNC"],\
+                done_func           = cfg["ER"]["DONE_FUNC"])
+            self.filename = cfg["ENV"] + '_' + cfg["RL"]["ALGORITHM"] + '_' + cfg["ER"]["ALGORITHM"] + '_' + cfg["ER"]["STRATEGY"]
 
         # Hyper-parameters for learning
         self.discount_factor = 0.99
@@ -40,6 +40,7 @@ class MDQNAgent:
         self.epsilon = 1.0
         self.epsilon_decay = 0.999
         self.epsilon_min = 0.01
+        self.tau = 0.005
         self.entropy_tau = 0.03
         self.alpha = 0.9        
         self.lo = -1
@@ -135,7 +136,7 @@ class MDQNAgent:
             q = self.model(states)
             one_hot_action = tf.one_hot(actions, self.action_size)
             q = tf.reduce_sum(one_hot_action * q, axis=1)
-            
+
             # munchausen reward
             target_q = tf.stop_gradient(self.target_model(states))
             target_v = tf.reduce_max(target_q,axis=1)
@@ -180,17 +181,17 @@ class MDQNAgent:
         return loss
 
     def update_network(self):
-        # if self.steps % self.update_period != 0:
-        if self.is_done:
-            self.hard_update_target_model()
+        if self.steps % self.update_period != 0:
+        # if self.is_done:
+            self.soft_update_target_model()
         return
 
     def load_model(self,at):
-        self.actor.load_weights( at + self.filename + "_TF")
-        self.critic.load_weights(at + self.filename + "_TF")
+        self.model.load_weights( at + self.filename + "_TF")
+        self.target_model.load_weights(at + self.filename + "_TF")
         return
 
     def save_model(self,at):
-        self.actor.save_weights( at + self.filename + "_TF", save_format="tf")
-        self.critic.save_weights(at + self.filename + "_TF", save_format="tf")
+        self.model.save_weights( at + self.filename + "_TF", save_format="tf")
+        self.target_model.save_weights(at + self.filename + "_TF", save_format="tf")
         return

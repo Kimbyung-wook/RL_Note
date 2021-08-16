@@ -38,9 +38,9 @@ if __name__ == "__main__":
                 "RL":{
                     "ALGORITHM":item[0],\
                 },\
-                "ER":item[1],\
-                "HER":\
+                "ER":\
                     {
+                        "ALGORITHM":item[1],\
                         "REPLAY_N":8,\
                         "STRATEGY":"FINAL",\
                         "REWARD_FUNC":reward_function,\
@@ -51,10 +51,10 @@ if __name__ == "__main__":
                 "MEMORY_SIZE":50000,\
                 }
         env_config = env_configs[cfg["ENV"]]
-        if cfg["ER"] == "HER":
-            FILENAME = cfg["ENV"] + '_' + cfg["RL"]["ALGORITHM"] + '_' + cfg["ER"] + '_' + cfg["HER"]["STRATEGY"]
+        if cfg["ER"]["ALGORITHM"] == "HER":
+            FILENAME = cfg["ENV"] + '_' + cfg["RL"]["ALGORITHM"] + '_' + cfg["ER"]["ALGORITHM"] + '_' + cfg["HER"]["STRATEGY"]
         else:
-            FILENAME = cfg["ENV"] + '_' + cfg["RL"]["ALGORITHM"] + '_' + cfg["ER"]
+            FILENAME = cfg["ENV"] + '_' + cfg["RL"]["ALGORITHM"] + '_' + cfg["ER"]["ALGORITHM"]
         EPISODES = env_config["EPISODES"]
         END_SCORE = env_config["END_SCORE"]
         plt.clf()

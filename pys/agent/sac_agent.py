@@ -21,8 +21,8 @@ class SACAgent:
         self.action_max = env.action_space.high[0]
         self.env_name   = cfg["ENV"]
         self.rl_type    = "SAC"
-        self.er_type    = cfg["ER"].upper()
-        self.filename   = cfg["ENV"] + '_' + cfg["RL"]["ALGORITHM"] + '_' + cfg["ER"]
+        self.er_type    = cfg["ER"]["ALGORITHM"].upper()
+        self.filename   = cfg["ENV"] + '_' + cfg["RL"]["ALGORITHM"] + '_' + cfg["ER"]["ALGORITHM"]
 
         # Experience Replay
         self.batch_size = cfg["BATCH_SIZE"]
@@ -35,11 +35,11 @@ class SACAgent:
         elif self.er_type == "HER":
             self.memory = HindsightMemory(\
                 capacity            = self.buffer_size,\
-                replay_n            = cfg["HER"]["REPLAY_N"],\
-                replay_strategy     = cfg["HER"]["STRATEGY"],\
-                reward_func         = cfg["HER"]["REWARD_FUNC"],\
-                done_func           = cfg["HER"]["DONE_FUNC"])
-            self.filename = cfg["ENV"] + '_' + cfg["RL"]["ALGORITHM"] + '_' + cfg["ER"] + '_' + cfg["HER"]["STRATEGY"]
+                replay_n            = cfg["ER"]["REPLAY_N"],\
+                replay_strategy     = cfg["ER"]["STRATEGY"],\
+                reward_func         = cfg["ER"]["REWARD_FUNC"],\
+                done_func           = cfg["ER"]["DONE_FUNC"])
+            self.filename = cfg["ENV"] + '_' + cfg["RL"]["ALGORITHM"] + '_' + cfg["ER"]["ALGORITHM"] + '_' + cfg["ER"]["STRATEGY"]
 
         # Hyper params for learning
         self.discount_factor = 0.99
