@@ -7,8 +7,9 @@ cwd = os.getcwd()
 pos = cwd.find('RL_Note')
 root_path = cwd[0:pos] + 'RL_Note'
 sys.path.append(root_path)
-print(root_path)
+print("Root Path : ",root_path)
 workspace_path = root_path + "\\pys"
+print("Workspace Path : ",workspace_path)
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' 
 
 import gym
@@ -23,10 +24,12 @@ from pys.agent.mdqn_agent import MDQNAgent
 #             ('DDPG','ER'),('DDPG','PER'),('DDPG','HER'),\
 #         )
 lists = (
-            ('MDQN','PER'),('MDQN','ER'),\
-            ('DQN','ER'),('DQN','PER'),\
+            # ('MDQN','PER'),\
+            # ('MDQN','ER'),\
+            ('DQN','ER'),\
+            # ('DQN','PER'),\
         )
-        
+print('Batch list : ',lists)
 if __name__ == "__main__":
     for item in lists:
         cfg = {\
@@ -120,25 +123,25 @@ if __name__ == "__main__":
                     plt.plot(episodes, scores_avg, 'b')
                     plt.plot(episodes, scores_raw, 'b', alpha=0.8, linewidth=0.5)
                     plt.xlabel('episode'); plt.ylabel('average score'); plt.grid()
-                    plt.title(cfg["ENV"] +'_' + cfg["RL"]["ALGORITHM"] +'_' + cfg["ER"])
+                    plt.title(FILENAME)
                     plt.subplot(312)
                     plt.plot(episodes, epsilons, 'b')
                     plt.xlabel('episode'); plt.ylabel('epsilon'); plt.grid()
                     plt.subplot(313)
                     plt.plot(episodes, losses, 'b')
                     plt.xlabel('episode'); plt.ylabel('losses') ;plt.grid()
-                    plt.savefig(workspace_path + "\\result\\img\\" + FILENAME + "_TF.jpg", dpi=100)
+                    # plt.savefig(workspace_path + "\\result\\img\\" + FILENAME + "_TF.jpg", dpi=100)
 
                     # 이동 평균이 0 이상일 때 종료
                     if score_avg > END_SCORE:
-                        agent.save_model(workspace_path + "\\result\\save_model\\")
+                        # agent.save_model(workspace_path + "\\result\\save_model\\")
                         end = True
                         break
             if end == True:
                 env.close()
-                np.save(workspace_path + "\\result\\data\\" + FILENAME + "_TF_epi",  episodes)
-                np.save(workspace_path + "\\result\\data\\" + FILENAME + "_TF_scores_avg",scores_avg)
-                np.save(workspace_path + "\\result\\data\\" + FILENAME + "_TF_scores_raw",scores_raw)
-                np.save(workspace_path + "\\result\\data\\" + FILENAME + "_TF_losses",losses)
+                # np.save(workspace_path + "\\result\\data\\" + FILENAME + "_TF_epi",  episodes)
+                # np.save(workspace_path + "\\result\\data\\" + FILENAME + "_TF_scores_avg",scores_avg)
+                # np.save(workspace_path + "\\result\\data\\" + FILENAME + "_TF_scores_raw",scores_raw)
+                # np.save(workspace_path + "\\result\\data\\" + FILENAME + "_TF_losses",losses)
                 print("End")
                 break
