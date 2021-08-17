@@ -1,2 +1,0 @@
-model_checkpoint_path: "LunarLanderContinuous-v2_SAC_PER_TF_critic2"
-all_model_checkpoint_paths: "LunarLanderContinuous-v2_SAC_PER_TF_critic2"

@@ -3,20 +3,17 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras.layers import Input
 
-from pys.utils.ou_noise import OUActionNoise
 from pys.utils.memory import ReplayMemory
 from pys.utils.prioritized_memory import ProportionalPrioritizedMemory
 from pys.utils.hindsight_memory import HindsightMemory
-from pys.model.actor_critic_deterministic_continuous import Actor, Critic
+from pys.model.q_network import QNetwork
 
-class DDPGAgent:
+class DQNAgent:
     def __init__(self, env:object, cfg:dict):
         self.state_size = env.observation_space.shape[0]
-        self.action_size= env.action_space.shape[0]
-        self.action_min = env.action_space.low[0]
-        self.action_max = env.action_space.high[0]
+        self.action_size= env.action_space.n
         self.env_name   = cfg["ENV"]
-        self.rl_type    = "DDPG"
+        self.rl_type    = "DQN"
         self.er_type    = cfg["ER"]["ALGORITHM"].upper()
         self.filename   = cfg["ENV"] + '_' + cfg["RL"]["ALGORITHM"] + '_' + cfg["ER"]["ALGORITHM"]
 
@@ -37,47 +34,32 @@ class DDPGAgent:
                 done_func           = cfg["ER"]["DONE_FUNC"])
             self.filename = cfg["ENV"] + '_' + cfg["RL"]["ALGORITHM"] + '_' + cfg["ER"]["ALGORITHM"] + '_' + cfg["ER"]["STRATEGY"]
 
-        # Hyper params for learning
+        # Hyper-parameters for learning
         self.discount_factor = 0.99
-        self.actor_learning_rate  = 0.001
-        self.critic_learning_rate = 0.002
+        self.learning_rate = 0.001
+        self.epsilon = 1.0
+        self.epsilon_decay = 0.999
+        self.epsilon_min = 0.01
         self.tau = 0.005
-
-        # Networks
-        self.critic         = Critic(self.state_size, self.action_size)
-        self.target_critic  = Critic(self.state_size, self.action_size)
-        self.actor          = Actor(self.state_size, self.action_size, self.action_min, self.action_max)
-        self.target_actor   = Actor(self.state_size, self.action_size, self.action_min, self.action_max)
-        self.critic_optimizer   = tf.keras.optimizers.Adam(lr=self.critic_learning_rate)
-        self.actor_optimizer    = tf.keras.optimizers.Adam(lr=self.actor_learning_rate)
-
-        self.actor.build(input_shape=(None, self.state_size))
-        self.target_actor.build(input_shape=(None, self.state_size))
-        state_in = Input((self.state_size,))
-        action_in = Input((self.action_size,))
-        self.actor(state_in)
-        self.target_actor(state_in)
-        self.critic([state_in, action_in])
-        self.target_critic([state_in, action_in])
-        # self.actor.summary()
-        # self.critic.summary()
+        
+        # Neural Network Architecture
+        self.model        = QNetwork(self.state_size, self.action_size, cfg["RL"]["NETWORK"])
+        self.target_model = QNetwork(self.state_size, self.action_size, cfg["RL"]["NETWORK"])
+        self.optimizer = tf.keras.optimizers.Adam(lr=self.learning_rate)
         self.hard_update_target_model()
-
-        # Noise
-        self.noise_std_dev = 0.2
-        self.ou_noise = OUActionNoise(mean=np.zeros(1), std_deviation=float(self.noise_std_dev) * np.ones(1))
-
+        
         # Miscellaneous
         self.show_media_info = False
+        self.steps = 0
+        self.update_period = 2
+        # self.interaction_period = 1
 
         print(self.filename)
         print('States {0}, Actions {1}'.format(self.state_size, self.action_size))
-        for i in range(self.action_size):
-            print(i+1,'th Action space {0:.2f} ~ {1:.2f}'.format(env.action_space.low[i], env.action_space.high[i]))
-
+        
     def remember(self, state, action, reward, next_state, done, goal=None):
         state       = np.array(state,       dtype=np.float32)
-        action      = np.array(action,      dtype=np.float32)
+        action      = np.array([action])
         reward      = np.array([reward],    dtype=np.float32)
         done        = np.array([done],      dtype=np.float32)
         next_state  = np.array(next_state,  dtype=np.float32)
@@ -88,33 +70,33 @@ class DDPGAgent:
             transition  = (state, action, reward, next_state, done)
         self.memory.append(transition)
         return
-
+        
     def hard_update_target_model(self):
-        self.target_actor.set_weights(self.actor.get_weights())
-        self.target_critic.set_weights(self.critic.get_weights())
+        self.target_model.set_weights(self.model.get_weights())
 
     def soft_update_target_model(self):
         tau = self.tau
-        for (net, target_net) in zip(   self.actor.trainable_variables,
-                                        self.target_actor.trainable_variables):
-            target_net.assign(tau * net + (1.0 - tau) * target_net)
-        for (net, target_net) in zip(   self.critic.trainable_variables,
-                                        self.target_critic.trainable_variables):
+        for (net, target_net) in zip(   self.model.trainable_variables,
+                                        self.target_model.trainable_variables):
             target_net.assign(tau * net + (1.0 - tau) * target_net)
 
     def get_action(self,state):
-        state = tf.convert_to_tensor([state], dtype=tf.float32)
-        action = self.actor(state)
+        self.steps += 1
         # Exploration and Exploitation
-        action_from_net = action.numpy()[0]
-        action_from_noise = self.ou_noise()
-        return np.clip(action_from_net+action_from_noise,self.action_min,self.action_max)
-
+        if (np.random.rand() <= self.epsilon):
+            return random.randrange(self.action_size)
+        else:
+            state = tf.convert_to_tensor([state], dtype=tf.float32)
+            return np.argmax(self.model(state))
+        
     def train_model(self):
         # Train from Experience Replay
         # Training Condition - Memory Size
         if len(self.memory) < self.train_start:
-            return 0.0,0.0
+            return 0.0
+        # Decaying Exploration Ratio
+        if self.epsilon > self.epsilon_min:
+            self.epsilon *= self.epsilon_decay
         # Sampling from the memory
         if self.er_type == "ER" or self.er_type == "HER":
             mini_batch = self.memory.sample(self.batch_size)
@@ -122,7 +104,7 @@ class DDPGAgent:
             mini_batch, idxs, is_weights = self.memory.sample(self.batch_size)
 
         states      = tf.convert_to_tensor(np.array([sample[0] for sample in mini_batch]))
-        actions     = tf.convert_to_tensor(np.array([sample[1] for sample in mini_batch]))
+        actions     = tf.convert_to_tensor(np.array([sample[1][0] for sample in mini_batch]))
         rewards     = tf.convert_to_tensor(np.array([sample[2] for sample in mini_batch]))
         next_states = tf.convert_to_tensor(np.array([sample[3] for sample in mini_batch]))
         dones       = tf.convert_to_tensor(np.array([sample[4] for sample in mini_batch]))
@@ -140,46 +122,43 @@ class DDPGAgent:
                 goals = tf.convert_to_tensor(np.array([sample[5] for sample in mini_batch]))
                 print('**** shape of goals', np.shape(goals),type(goals))
 
-        # Update critic
+        model_params = self.model.trainable_variables
         with tf.GradientTape() as tape:
-            target_actions = self.target_actor(next_states,training=True)
-            target_q = self.target_critic([next_states,target_actions],training=True)
-            target_value = rewards + (1 - dones) * self.discount_factor * target_q
-            q = self.critic([states, actions],training=True)
-            td_error = target_value - q
-            if self.er_type == "ER" or self.er_type == "HER":
-                critic_loss = tf.math.reduce_mean(tf.math.square(target_value - q))
-            elif self.er_type == "PER":
-                critic_loss = tf.math.reduce_mean(is_weights * tf.math.square(target_value - q))
-        critic_loss_out = critic_loss.numpy()
-        critic_params = self.critic.trainable_variables
-        critic_grads = tape.gradient(critic_loss, critic_params)
-        self.critic_optimizer.apply_gradients(zip(critic_grads, critic_params))
+            # get q value
+            q = self.model(states)
+            one_hot_action = tf.one_hot(actions, self.action_size)
+            q = tf.reduce_sum(one_hot_action * q, axis=1)
+            q = tf.expand_dims(q,axis=1)
+            # Target q and maximum target q
+            target_q = tf.stop_gradient(self.target_model(next_states))
+            max_q = tf.reduce_max(target_q,axis=1)
+            max_q = tf.expand_dims(max_q,axis=1)
+            
+            targets = rewards + (1 - dones) * self.discount_factor * max_q
+            td_error = targets - q
+            loss = tf.reduce_mean(tf.square(targets - q))
+            
+        grads = tape.gradient(loss, model_params)
+        self.optimizer.apply_gradients(zip(grads, model_params))
 
-        # Update critic
-        with tf.GradientTape() as tape:
-            new_actions = self.actor(states,training=True)
-            new_q = self.critic([states, new_actions],training=True)
-            actor_loss = -tf.reduce_mean(new_q)
-        actor_loss_out = actor_loss.numpy()
-        actor_params = self.actor.trainable_variables
-        actor_grads = tape.gradient(actor_loss, actor_params)
-        self.actor_optimizer.apply_gradients(zip(actor_grads, actor_params))
-        
         if self.er_type == "PER":
             sample_importance = td_error.numpy()
             for i in range(self.batch_size):
                 self.memory.update(idxs[i], sample_importance[i])
 
-        self.soft_update_target_model()
-        return critic_loss_out, actor_loss_out
+        return loss
+
+    def update_network(self):
+        if self.steps % self.update_period != 0:
+            self.soft_update_target_model()
+        return
 
     def load_model(self,at):
-        self.actor.load_weights( at + self.filename + "_TF_actor")
-        self.critic.load_weights(at + self.filename + "_TF_critic")
+        self.model.load_weights( at + self.filename + "_TF")
+        self.target_model.load_weights(at + self.filename + "_TF")
         return
 
     def save_model(self,at):
-        self.actor.save_weights( at + self.filename + "_TF_actor", save_format="tf")
-        self.critic.save_weights(at + self.filename + "_TF_critic", save_format="tf")
+        self.model.save_weights( at + self.filename + "_TF", save_format="tf")
+        self.target_model.save_weights(at + self.filename + "_TF", save_format="tf")
         return

@@ -49,8 +49,14 @@ class ProportionalPrioritizedMemory:  # stored as ( s, a, r, s_ ) in SumTree
             a = segment * i
             b = segment * (i + 1)
 
-            s = random.uniform(a, b)
-            (idx, p, data) = self.tree.get(s)
+            # s = random.uniform(a, b)
+            # (idx, p, data) = self.tree.get(s)
+            while True:
+                s = random.uniform(a, b)
+                (idx, p, data) = self.tree.get(s)
+                if not isinstance(data, int):
+                    break
+
             priorities.append(p)
             batch.append(data)
             idxs.append(idx)

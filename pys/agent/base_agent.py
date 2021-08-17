@@ -10,9 +10,9 @@ class BaseAgent:
         self.action_min = env.action_space.low[0]
         self.action_max = env.action_space.high[0]
         self.env_name   = cfg["ENV"]
-        self.rl_type    = cfg["RL"]
+        self.rl_type    = cfg["RL"]["ALGORITHM"]
         self.er_type    = cfg["ER"].upper()
-        self.filename   = cfg["ENV"] + '_' + cfg["RL"] + '_' + cfg["ER"]
+        self.filename   = cfg["ENV"] + '_' + cfg["RL"]["ALGORITHM"] + '_' + cfg["ER"]
 
         # Experience Replay
         self.batch_size = cfg["BATCH_SIZE"]
@@ -29,7 +29,7 @@ class BaseAgent:
                 replay_strategy     = cfg["HER"]["STRATEGY"],\
                 reward_func         = cfg["HER"]["REWARD_FUNC"],\
                 done_func           = cfg["HER"]["DONE_FUNC"])
-            self.filename = cfg["ENV"] + '_' + cfg["RL"] + '_' + cfg["ER"] + '_' + cfg["HER"]["STRATEGY"]
+            self.filename = cfg["ENV"] + '_' + cfg["RL"]["ALGORITHM"] + '_' + cfg["ER"] + '_' + cfg["HER"]["STRATEGY"]
 
     def remember(self, state, action, reward, next_state, done, goal=None):
         state       = np.array(state,       dtype=np.float32)
