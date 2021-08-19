@@ -1,14 +1,18 @@
+# This code is highly refered from
+#    https://teddylee777.github.io/tensorflow/autoencoder
+# and it recommends to read following sites.
 # https://excelsior-cjh.tistory.com/187
-# https://teddylee777.github.io/tensorflow/autoencoder
 # https://junstar92.tistory.com/113
 # https://techblog-history-younghunjo1.tistory.com/130
+# https://blog.keras.io/building-autoencoders-in-keras.html
+# https://wikidocs.net/3413
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' 
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Input, Dense, Conv2D, Conv2DTranspose, Flatten, Dropout, BatchNormalization, Reshape, LeakyReLU
-from tensorflow.keras.losses import MeanSquaredError
+from tensorflow.keras.losses import MeanSquaredError, BinaryCrossentropy
 from tensorflow.keras.optimizers import Adam, RMSprop
 from tensorflow.keras.callbacks import ModelCheckpoint
 import matplotlib.pyplot as plt
@@ -100,6 +104,7 @@ def AutoEncoder(input_shape, compressed_shape):
         
         auto_encoder = Model(inputs=encoder_in, outputs=decoder_out)
         auto_encoder.compile(optimizer=Adam(learning_rate=learning_rate), loss=MeanSquaredError())
+        # auto_encoder.compile(optimizer=Adam(learning_rate=learning_rate), loss=BinaryCrossentropy())
         auto_encoder.summary()
         return auto_encoder, encoder, decoder
 
@@ -141,10 +146,12 @@ if __name__ == "__main__":
         auto_encoder.load_weights(checkpoint_path)
         print('Load model weights')
     
+    # Verify model
     # Visualize encoded data
     xy = encoder.predict(x_train)
     print('Position of the compressed data : ',xy.shape, y_train.shape)
     plt.figure(1, figsize=(15, 12))
+    plt.title('Visualize encoded data')
     plt.scatter(x=xy[:, 0], y=xy[:, 1], c=y_train, cmap=plt.get_cmap('Paired'), s=3)
     plt.colorbar()
     # plt.show()
@@ -153,23 +160,24 @@ if __name__ == "__main__":
     # Comparison of the image re-generation performance using Auto Encoder
     plt.figure(2)
     decoded_images = auto_encoder.predict(x_train)
+    plt.title('Original Images')
     fig, axes = plt.subplots(3, 5)
     fig.set_size_inches(12, 6)
     for i in range(15):
         axes[i//5, i%5].imshow(x_train[i].reshape(28, 28), cmap='gray')
         axes[i//5, i%5].axis('off')
     plt.tight_layout()
-    plt.title('Original Images')
     # plt.show()
     plt.savefig('Original Images.png')
 
+    plt.figure(3)
     fig, axes = plt.subplots(3, 5)
+    plt.title('Auto Encoder Images')
     fig.set_size_inches(12, 6)
     for i in range(15):
         axes[i//5, i%5].imshow(decoded_images[i].reshape(28, 28), cmap='gray')
         axes[i//5, i%5].axis('off')
     plt.tight_layout()
-    plt.title('Auto Encoder Images')
     # plt.show()
     plt.savefig('Auto Encoder Images.png')
 
