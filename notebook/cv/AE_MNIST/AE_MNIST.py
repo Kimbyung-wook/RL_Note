@@ -1,6 +1,7 @@
 # https://excelsior-cjh.tistory.com/187
 # https://teddylee777.github.io/tensorflow/autoencoder
 # https://junstar92.tistory.com/113
+# https://techblog-history-younghunjo1.tistory.com/130
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' 
 import numpy as np
