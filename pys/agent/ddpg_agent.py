@@ -44,10 +44,10 @@ class DDPGAgent:
         self.tau = 0.005
 
         # Networks
-        self.critic         = Critic(self.state_size, self.action_size)
-        self.target_critic  = Critic(self.state_size, self.action_size)
-        self.actor          = Actor(self.state_size, self.action_size, self.action_min, self.action_max)
-        self.target_actor   = Actor(self.state_size, self.action_size, self.action_min, self.action_max)
+        self.critic         = Critic(self.state_size, self.action_size, cfg=cfg['RL']["NETWORK"])
+        self.target_critic  = Critic(self.state_size, self.action_size, cfg=cfg['RL']["NETWORK"])
+        self.actor          = Actor(self.state_size, self.action_size, self.action_min, self.action_max, cfg=cfg['RL']["NETWORK"])
+        self.target_actor   = Actor(self.state_size, self.action_size, self.action_min, self.action_max, cfg=cfg['RL']["NETWORK"])
         self.critic_optimizer   = tf.keras.optimizers.Adam(lr=self.critic_learning_rate)
         self.actor_optimizer    = tf.keras.optimizers.Adam(lr=self.actor_learning_rate)
 
