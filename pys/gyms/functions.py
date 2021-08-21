@@ -1,6 +1,6 @@
 import numpy as np
 
-def pendulum_done(state):
+def pendulum_done(state, goal_state):
     return False
     
 def pendulum_reward(state, action, reward_old, next_state, done):
@@ -12,7 +12,7 @@ def pendulum_reward(state, action, reward_old, next_state, done):
     costs   = th ** 2 + 0.1 * thdot + 0.001 * (u ** 2)
     return -costs
 
-def lunarlandercontinuous_done(state):
+def lunarlandercontinuous_done(state, goal_state):
     return False
 
 def lunarlandercontinuous_reward(state, action, reward_old, next_state, done):
@@ -36,3 +36,15 @@ def lunarlandercontinuous_reward(state, action, reward_old, next_state, done):
     reward -= s_power * 0.03
 
     return reward
+
+def mountain_car_done(state, goal_state=(0.5, 0.0)):
+    goal_position = goal_state[0]
+    goal_velocity = goal_state[1]
+    position, velocity = state
+    done = bool(position >= goal_position and velocity >= goal_velocity)
+    return done
+
+def mountain_car_reward(state, action, reward_old, next_state, done):
+
+
+    return -1.0

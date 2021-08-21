@@ -6,6 +6,7 @@
 # https://techblog-history-younghunjo1.tistory.com/130
 # https://blog.keras.io/building-autoencoders-in-keras.html
 # https://wikidocs.net/3413
+
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' 
 import numpy as np
@@ -87,7 +88,7 @@ def AutoEncoder(input_shape, compressed_shape):
         compressed_shape = compressed_shape
 
         # Hyper-parameter
-        learning_rate = 0.0005
+        learning_rate = 0.001
         batch_size = 32
 
         # Define auto-encoder
@@ -109,6 +110,8 @@ def AutoEncoder(input_shape, compressed_shape):
         return auto_encoder, encoder, decoder
 
 if __name__ == "__main__":
+    # User Defined Choice
+    data = "FASION_MNIST"
     training = False
     # Define ML model
     input_shape=(28,28,1)
@@ -117,7 +120,12 @@ if __name__ == "__main__":
     auto_encoder, encoder, decoder = AutoEncoder(input_shape=input_shape, compressed_shape=compressed_shape)
 
     # Load MNIST Data and Normalize that
-    mnist = tf.keras.datasets.mnist
+    if data == "MNIST":
+        mnist = tf.keras.datasets.mnist
+    elif data == "FASION_MNIST":
+        mnist = tf.keras.datasets.fashion_mnist
+    else:
+        mnist = tf.keras.datasets.mnist
     (x_train, y_train), (x_valid, y_valid) = mnist.load_data()
     print('Shape of x_train : ', x_train.shape)
     print('Shape of y_train : ', y_train.shape)
@@ -127,7 +135,7 @@ if __name__ == "__main__":
     print('Maxi of x_train : ', x_train.max())
     print('Mini of x_train : ', x_train.min())
 
-    checkpoint_path = '01_basic_auto_encoder_MNIST1.ckpt'
+    checkpoint_path = '01_basic_auto_encoder_' + data + '.ckpt'
     if (training==True):
         # Train
         checkpoint = ModelCheckpoint(checkpoint_path, 
@@ -151,16 +159,16 @@ if __name__ == "__main__":
     xy = encoder.predict(x_train)
     print('Position of the compressed data : ',xy.shape, y_train.shape)
     plt.figure(1, figsize=(15, 12))
-    plt.title('Visualize encoded data')
+    plt.title('Visualize encoded data' + data)
     plt.scatter(x=xy[:, 0], y=xy[:, 1], c=y_train, cmap=plt.get_cmap('Paired'), s=3)
     plt.colorbar()
     # plt.show()
-    plt.savefig('Visualize encoded data.png')
+    plt.savefig('Visualize encoded data ' + data + '.png')
 
     # Comparison of the image re-generation performance using Auto Encoder
     plt.figure(2)
     decoded_images = auto_encoder.predict(x_train)
-    plt.title('Original Images')
+    plt.title('Original Images' + data)
     fig, axes = plt.subplots(3, 5)
     fig.set_size_inches(12, 6)
     for i in range(15):
@@ -168,17 +176,17 @@ if __name__ == "__main__":
         axes[i//5, i%5].axis('off')
     plt.tight_layout()
     # plt.show()
-    plt.savefig('Original Images.png')
+    plt.savefig('Original Images ' + data + '.png')
 
     plt.figure(3)
     fig, axes = plt.subplots(3, 5)
-    plt.title('Auto Encoder Images')
+    plt.title('Auto Encoder Images' + data)
     fig.set_size_inches(12, 6)
     for i in range(15):
         axes[i//5, i%5].imshow(decoded_images[i].reshape(28, 28), cmap='gray')
         axes[i//5, i%5].axis('off')
     plt.tight_layout()
     # plt.show()
-    plt.savefig('Auto Encoder Images.png')
+    plt.savefig('Auto Encoder Images ' + data + '.png')
 
     print('end')

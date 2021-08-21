@@ -8,6 +8,10 @@ env_configs = {
         'EPISODES':1000,
         'END_SCORE':300
     },
+    'MountainCar-v0':{
+        'EPISODES':2000,
+        'END_SCORE':-100
+    },
     # Continuous Action Env
     'Pendulum-v0':{
         'EPISODES':500,

@@ -45,13 +45,13 @@ class DQNAgent:
         # Neural Network Architecture
         self.model        = QNetwork(self.state_size, self.action_size, cfg["RL"]["NETWORK"])
         self.target_model = QNetwork(self.state_size, self.action_size, cfg["RL"]["NETWORK"])
-        self.optimizer = tf.keras.optimizers.Adam(lr=self.learning_rate)
+        self.optimizer = tf.keras.optimizers.Adam(learning_rate=self.learning_rate)
         self.hard_update_target_model()
         
         # Miscellaneous
         self.show_media_info = False
         self.steps = 0
-        self.update_period = 2
+        self.update_period = 10
         # self.interaction_period = 1
 
         print(self.filename)

@@ -18,7 +18,16 @@ import matplotlib.pyplot as plt
 from env_config  import env_configs
 from pys.agent.dqn_agent import DQNAgent
 from pys.agent.mdqn_agent import MDQNAgent
+from pys.gyms.functions import mountain_car_done as done_function
+from pys.gyms.functions import mountain_car_reward as reward_function
 
+import tensorflow as tf
+gpus = tf.config.experimental.list_physical_devices('GPU')
+if gpus:
+  try:
+    tf.config.experimental.set_virtual_device_configuration(gpus[0], [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=1024)])
+  except RuntimeError as e:
+    print(e)
 # lists = (   ('SAC','ER'),('SAC','PER'),('SAC','HER'),\
 #             ('TD3','ER'),('TD3','PER'),('TD3','HER'),\
 #             ('DDPG','ER'),('DDPG','PER'),('DDPG','HER'),\
@@ -26,7 +35,8 @@ from pys.agent.mdqn_agent import MDQNAgent
 lists = (
             # ('MDQN','PER'),\
             # ('MDQN','ER'),\
-            ('DQN','ER'),\
+            ('MDQN','HER'),\
+            # ('DQN','ER'),\
             # ('DQN','PER'),\
         )
 print('Batch list : ',lists)
@@ -34,12 +44,12 @@ if __name__ == "__main__":
     for item in lists:
         cfg = {\
                 # "ENV":"Pong-v0",\
-                "ENV":"CartPole-v1",\
+                # "ENV":"CartPole-v1",\
+                "ENV":"MountainCar-v0",\
                 "RL":{
                     "ALGORITHM":item[0],\
                     "NETWORK":{
-                        "LAYER":[255,255],\
-
+                        "LAYER":[128,128],\
                     }
                 },\
                 "ER":
@@ -47,16 +57,16 @@ if __name__ == "__main__":
                         "ALGORITHM":item[1],\
                         "REPLAY_N":8,\
                         "STRATEGY":"EPISODE",\
-                        # "REWARD_FUNC":reward_function,\
-                        # "DONE_FUNC":done_function,\
+                        "REWARD_FUNC":reward_function,\
+                        "DONE_FUNC":done_function,\
                     },\
-                "BATCH_SIZE":8,\
-                "TRAIN_START":500,\
+                "BATCH_SIZE":64,\
+                "TRAIN_START":2000,\
                 "MEMORY_SIZE":20000,\
                 }
         env_config = env_configs[cfg["ENV"]]
         if cfg["ER"]["ALGORITHM"] == "HER":
-            FILENAME = cfg["ENV"] + '_' + cfg["RL"]["ALGORITHM"] + '_' + cfg["ER"]["ALGORITHM"] + '_' + cfg["HER"]["STRATEGY"]
+            FILENAME = cfg["ENV"] + '_' + cfg["RL"]["ALGORITHM"] + '_' + cfg["ER"]["ALGORITHM"] + '_' + cfg["ER"]["STRATEGY"]
         else:
             FILENAME = cfg["ENV"] + '_' + cfg["RL"]["ALGORITHM"] + '_' + cfg["ER"]["ALGORITHM"]
         EPISODES = env_config["EPISODES"]
@@ -79,7 +89,7 @@ if __name__ == "__main__":
         score_avg = 0
         end = False
         show_media_info = True
-        goal = np.array([1.0,0.0,0.0])
+        goal = (0.5,0.0)
         
         for e in range(EPISODES):
             # Episode initialization
@@ -88,7 +98,8 @@ if __name__ == "__main__":
             loss_list = []
             state = env.reset()
             while not done:
-                # env.render()
+                if e % 100 == 0:
+                    env.render()
                 # Interact with env.
                 action = agent.get_action(state)
                 next_state, reward, done, info = env.step(action)
@@ -130,18 +141,18 @@ if __name__ == "__main__":
                     plt.subplot(313)
                     plt.plot(episodes, losses, 'b')
                     plt.xlabel('episode'); plt.ylabel('losses') ;plt.grid()
-                    # plt.savefig(workspace_path + "\\result\\img\\" + FILENAME + "_TF.jpg", dpi=100)
+                    plt.savefig(workspace_path + "\\result\\img\\" + FILENAME + "_TF.jpg", dpi=100)
 
                     # 이동 평균이 0 이상일 때 종료
                     if score_avg > END_SCORE:
-                        # agent.save_model(workspace_path + "\\result\\save_model\\")
+                        agent.save_model(workspace_path + "\\result\\save_model\\")
                         end = True
                         break
             if end == True:
                 env.close()
-                # np.save(workspace_path + "\\result\\data\\" + FILENAME + "_TF_epi",  episodes)
-                # np.save(workspace_path + "\\result\\data\\" + FILENAME + "_TF_scores_avg",scores_avg)
-                # np.save(workspace_path + "\\result\\data\\" + FILENAME + "_TF_scores_raw",scores_raw)
-                # np.save(workspace_path + "\\result\\data\\" + FILENAME + "_TF_losses",losses)
+                np.save(workspace_path + "\\result\\data\\" + FILENAME + "_TF_epi",  episodes)
+                np.save(workspace_path + "\\result\\data\\" + FILENAME + "_TF_scores_avg",scores_avg)
+                np.save(workspace_path + "\\result\\data\\" + FILENAME + "_TF_scores_raw",scores_raw)
+                np.save(workspace_path + "\\result\\data\\" + FILENAME + "_TF_losses",losses)
                 print("End")
                 break
