@@ -50,12 +50,12 @@ class SACAgent:
         self.alpha = 0.200 # temperature
 
         # Networks
-        self.critic1        = Critic(self.state_size, self.action_size)
-        self.critic2        = Critic(self.state_size, self.action_size)
-        self.target_critic1 = Critic(self.state_size, self.action_size)
-        self.target_critic2 = Critic(self.state_size, self.action_size)
-        self.actor          = Actor(self.state_size, self.action_size, self.log_std_min, self.log_std_max)
-        self.target_actor   = Actor(self.state_size, self.action_size, self.log_std_min, self.log_std_max)
+        self.critic1        = Critic(self.state_size, self.action_size, cfg=cfg['RL']["NETWORK"])
+        self.critic2        = Critic(self.state_size, self.action_size, cfg=cfg['RL']["NETWORK"])
+        self.target_critic1 = Critic(self.state_size, self.action_size, cfg=cfg['RL']["NETWORK"])
+        self.target_critic2 = Critic(self.state_size, self.action_size, cfg=cfg['RL']["NETWORK"])
+        self.actor          = Actor(self.state_size, self.action_size, self.log_std_min, self.log_std_max, cfg=cfg['RL']['NETWORK'])
+        self.target_actor   = Actor(self.state_size, self.action_size, self.log_std_min, self.log_std_max, cfg=cfg['RL']['NETWORK'])
         self.log_alpha      = tf.math.log(0.2)
         self.alpha          = tf.math.exp(self.log_alpha)
         # Optimizer

@@ -4,10 +4,10 @@ import tensorflow as tf
 from tensorflow.keras.layers import Dense, concatenate, Lambda
 
 class Actor(tf.keras.Model):
-    def __init__(self, state_size, action_size, log_std_min, log_std_max,cfg):
+    def __init__(self, state_size, action_size, action_min, action_max,cfg):
         super(Actor, self).__init__()
-        self.log_std_min = log_std_min
-        self.log_std_max = log_std_max
+        self.action_min = action_min
+        self.action_max = action_max
         self.structure = cfg["ACTOR"]
         self.layer = []
         for numbers in self.structure:

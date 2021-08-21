@@ -44,12 +44,12 @@ class TD3Agent:
         self.tau = 0.005
 
         # Networks
-        self.critic1        = Critic(self.state_size, self.action_size)
-        self.critic2        = Critic(self.state_size, self.action_size)
-        self.target_critic1 = Critic(self.state_size, self.action_size)
-        self.target_critic2 = Critic(self.state_size, self.action_size)
-        self.actor          = Actor(self.state_size, self.action_size, self.action_min, self.action_max)
-        self.target_actor   = Actor(self.state_size, self.action_size, self.action_min, self.action_max)
+        self.critic1        = Critic(self.state_size, self.action_size, cfg=cfg['RL']["NETWORK"])
+        self.critic2        = Critic(self.state_size, self.action_size, cfg=cfg['RL']["NETWORK"])
+        self.target_critic1 = Critic(self.state_size, self.action_size, cfg=cfg['RL']["NETWORK"])
+        self.target_critic2 = Critic(self.state_size, self.action_size, cfg=cfg['RL']["NETWORK"])
+        self.actor          = Actor(self.state_size, self.action_size, self.action_min, self.action_max, cfg=cfg['RL']["NETWORK"])
+        self.target_actor   = Actor(self.state_size, self.action_size, self.action_min, self.action_max, cfg=cfg['RL']["NETWORK"])
         self.critic1_optimizer   = tf.keras.optimizers.Adam(lr=self.critic_learning_rate)
         self.critic2_optimizer   = tf.keras.optimizers.Adam(lr=self.critic_learning_rate)
         self.actor_optimizer    = tf.keras.optimizers.Adam(lr=self.actor_learning_rate)

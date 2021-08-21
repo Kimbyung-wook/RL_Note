@@ -9,7 +9,8 @@ root_path = cwd[0:pos] + 'RL_Note'
 sys.path.append(root_path)
 print(root_path)
 workspace_path = root_path + "\\pys"
-
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' 
 import gym
 import random
 import numpy as np
@@ -21,35 +22,50 @@ from pys.agent.sac_agent    import SACAgent
 from pys.gyms.functions import lunarlandercontinuous_done as done_function
 from pys.gyms.functions import lunarlandercontinuous_reward as reward_function
 
-# lists = (   ('SAC','ER'),('SAC','PER'),('SAC','HER'),\
-#             ('TD3','ER'),('TD3','PER'),('TD3','HER'),\
-#             ('DDPG','ER'),('DDPG','PER'),('DDPG','HER'),\
-#         )
+import tensorflow as tf
+gpus = tf.config.experimental.list_physical_devices('GPU')
+if gpus:
+  try:
+    tf.config.experimental.set_virtual_device_configuration(gpus[0], [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=384)])
+  except RuntimeError as e:
+    print(e)
+
 lists = (
-            ('TD3','PER'),\
-            ('DDPG','ER'),('DDPG','PER'),\
+            # ('SAC','ER'), ('SAC','PER'), ('SAC','HER'),\
+            # ('TD3','ER'), ('TD3','PER'), ('TD3','HER'),\
+            ('DDPG','ER'),('DDPG','PER'), ('DDPG','HER'),\
         )
         
 if __name__ == "__main__":
     for item in lists:
         cfg = {\
-                # "ENV":"Pendulum-v0",\
-                "ENV":"LunarLanderContinuous-v2",\
-                "RL":{
-                    "ALGORITHM":item[0],\
-                },\
-                "ER":\
-                    {
-                        "ALGORITHM":item[1],\
-                        "REPLAY_N":8,\
-                        "STRATEGY":"FINAL",\
-                        "REWARD_FUNC":reward_function,\
-                        "DONE_FUNC":done_function,\
-                    },\
-                "BATCH_SIZE":32,\
-                "TRAIN_START":2000,\
-                "MEMORY_SIZE":50000,\
+        # "ENV":"Pendulum-v0",\
+        # "ENV":"LunarLanderContinuous-v2",\
+        "ENV":"MountainCarContinuous-v0",\
+        "RL":{
+            "ALGORITHM":item[0],\
+            "NETWORK":{
+                "ACTOR":[64,64],\
+                "CRITIC":
+                {
+                    "STATE":[16,32],\
+                    "ACTION":[32,32],\
+                    "CONCAT":[64,64]
                 }
+            }
+        },\
+        "ER":\
+            {
+                "ALGORITHM":item[1],\
+                "REPLAY_N":8,\
+                "STRATEGY":"EPISODE",\
+                "REWARD_FUNC":reward_function,\
+                "DONE_FUNC":done_function,\
+            },\
+        "BATCH_SIZE":32,\
+        "TRAIN_START":2000,\
+        "MEMORY_SIZE":50000,\
+        }
         env_config = env_configs[cfg["ENV"]]
         if cfg["ER"]["ALGORITHM"] == "HER":
             FILENAME = cfg["ENV"] + '_' + cfg["RL"]["ALGORITHM"] + '_' + cfg["ER"]["ALGORITHM"] + '_' + cfg["HER"]["STRATEGY"]
@@ -118,7 +134,7 @@ if __name__ == "__main__":
                     plt.plot(episodes, scores_avg, 'b')
                     plt.plot(episodes, scores_raw, 'b', alpha=0.8, linewidth=0.5)
                     plt.xlabel('episode'); plt.ylabel('average score'); plt.grid()
-                    plt.title(cfg["ENV"] +'_' + cfg["RL"]["ALGORITHM"] +'_' + cfg["ER"])
+                    plt.title(cfg["ENV"] +'_' + cfg["RL"]["ALGORITHM"] +'_' + cfg["ER"]["ALGORITHM"])
                     plt.subplot(312)
                     plt.plot(episodes, critic_mean, 'b.',markersize=3)
                     plt.xlabel('episode'); plt.ylabel('critic loss'); plt.grid()

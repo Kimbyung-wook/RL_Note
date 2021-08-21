@@ -20,5 +20,9 @@ env_configs = {
     'LunarLanderContinuous-v2':{
         'EPISODES':2000,
         'END_SCORE':200
+    },
+    'MountainCarContinuous-v0':{
+        'EPISODES':5000,
+        'END_SCORE':100
     }
 }
