@@ -22,13 +22,7 @@ class HindsightMemory():
         transition = (state, action, reward, next_state, done, goal)
         ReplayMemory.append(transition)
         '''
-        self.buffer_idx = self.buffer_idx % self.capacity
-        if(len(self.buffer) < self.capacity):
-            self.buffer += [sample]
-        else:
-            self.buffer[self.buffer_idx] = sample
-        self.buffer_idx += 1
-
+        self.add_transition(sample)
         self.add_her_transition(sample)
         done = bool(sample[4])
         if done:
@@ -37,6 +31,14 @@ class HindsightMemory():
             # print('after HER operation   : buffer size : ', len(self.buffer), '/ and a epi steps : ', len(self.episode_buffer))
             self.reset_current_episode()
             # print('reset current episode : buffer size : ', len(self.buffer), '/ and a epi steps : ', len(self.episode_buffer))
+
+    def add_transition(self, sample:list) -> None:
+        self.buffer_idx = self.buffer_idx % self.capacity
+        if(len(self.buffer) < self.capacity):
+            self.buffer += [sample]
+        else:
+            self.buffer[self.buffer_idx] = sample
+        self.buffer_idx += 1
 
     # get samples from priority memory according mini batch size n
     def sample(self, n:int) -> list:
@@ -117,7 +119,7 @@ class HindsightMemory():
                 new_reward = np.array([self.reward_func(state, action, reward, next_state, done)],dtype=np.float32)
                 transition = (state, action, new_reward, next_state, do_achieve, additional_goal)
                 # Store the transition to Buffer
-                self.buffer.append(transition)
+                self.add_transition(transition)
 
 
 
