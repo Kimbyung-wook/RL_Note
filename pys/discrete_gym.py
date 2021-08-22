@@ -35,9 +35,10 @@ if gpus:
 lists = (
             # ('MDQN','PER'),\
             # ('MDQN','ER'),\
-            ('MDQN','HER'),\
+            # ('MDQN','HER'),\
             # ('DQN','ER'),\
             # ('DQN','PER'),\
+            ('DQN','HER'),\
         )
 print('Batch list : ',lists)
 if __name__ == "__main__":
@@ -62,7 +63,7 @@ if __name__ == "__main__":
                     },\
                 "BATCH_SIZE":64,\
                 "TRAIN_START":2000,\
-                "MEMORY_SIZE":20000,\
+                "MEMORY_SIZE":200000,\
                 }
         env_config = env_configs[cfg["ENV"]]
         if cfg["ER"]["ALGORITHM"] == "HER":

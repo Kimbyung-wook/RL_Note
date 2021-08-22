@@ -1,6 +1,5 @@
 import random
 import numpy as np
-from collections import deque
 
 class HindsightMemory():
     def __init__(self, capacity:int, replay_strategy:str = 'random', replay_n:int = 8, reward_func = None, done_func = None):
@@ -15,10 +14,6 @@ class HindsightMemory():
         self.episode_buffer_idx = 0
         self.reward_func = reward_func
         self.done_func = done_func
-        if self.replay_strategy == 'future':
-            self.future_p = 1. - 1. / (1. + self.replay_n)
-        else:
-            self.future_p = 0.
 
     def append(self, sample:list) -> None:
         '''
@@ -26,28 +21,23 @@ class HindsightMemory():
         transition = (state, action, reward, next_state, done, goal)
         ReplayMemory.append(transition)
         '''
+        self.add_transition(sample)
+        self.add_her_transition(sample)
+        done = bool(sample[4])
+        if done:
+            # print('Episode end           : buffer size : ', len(self.buffer), '/ and a epi steps : ', len(self.episode_buffer))
+            self.generate_HER_transition()
+            # print('after HER operation   : buffer size : ', len(self.buffer), '/ and a epi steps : ', len(self.episode_buffer))
+            self.reset_current_episode()
+            # print('reset current episode : buffer size : ', len(self.buffer), '/ and a epi steps : ', len(self.episode_buffer))
+
+    def add_transition(self, sample:list) -> None:
         self.buffer_idx = self.buffer_idx % self.capacity
         if(len(self.buffer) < self.capacity):
             self.buffer += [sample]
         else:
             self.buffer[self.buffer_idx] = sample
         self.buffer_idx += 1
-
-        self.add_her_transition(sample)
-        done = bool(sample[4])
-        if done:
-            do_her_sample = False
-            if (self.replay_strategy == 'final'): 
-                do_her_sample = True
-            elif (self.replay_strategy == 'future'): 
-                do_her_sample = True
-            elif (self.replay_strategy == 'episode'): # get states in current episode
-                do_her_sample = (len(self.episode_buffer) > self.replay_n)
-            elif (self.replay_strategy == 'random'): # get states in buffer
-                do_her_sample = (len(self.buffer) > self.replay_n)
-            if do_her_sample:
-                self.generate_HER_transition()
-            self.reset_current_episode()
 
     # get samples from priority memory according mini batch size n
     def sample(self, n:int) -> list:
@@ -122,15 +112,10 @@ class HindsightMemory():
             # print('additional_goals ',additional_goals)
             # print('additional_goals ',len(additional_goals))
             for i in range(len(additional_goals)):
-                additional_goal = additional_goals[i]
+                now_goal = additional_goals[i]
                 # Do achieve?
-                do_achieve = np.array([self.done_func(next_state)],dtype=np.float32)
-                new_reward = np.array([self.reward_func(state, action, reward, next_state, done)],dtype=np.float32)
-                transition = (state, action, new_reward, next_state, do_achieve, additional_goal)
+                do_achieve = np.array([self.done_func(state, action, reward, next_state, done, now_goal)],dtype=np.float32)
+                new_reward = np.array([self.reward_func(state, action, reward, next_state, done, now_goal)],dtype=np.float32)
+                transition = (state, action, new_reward, next_state, do_achieve, now_goal)
                 # Store the transition to Buffer
-                self.buffer.append(transition)
-
-
-
-
-
+                self.add_transition(transition)

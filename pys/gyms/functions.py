@@ -37,14 +37,15 @@ def lunarlandercontinuous_reward(state, action, reward_old, next_state, done):
 
     return reward
 
-def mountain_car_done(state, goal_state=(0.5, 0.0)):
+def mountain_car_done(state, action, reward, next_state, done, goal_state=(0.5, 0.0)):
     goal_position = goal_state[0]
     goal_velocity = goal_state[1]
     position, velocity = state
-    done = bool(position >= goal_position and velocity >= goal_velocity)
+    # done = bool(position >= goal_position and velocity >= goal_velocity)
+    done = bool(position >= goal_position)
     return done
 
-def mountain_car_reward(state, action, reward_old, next_state, done):
+def mountain_car_reward(state, action, reward, next_state, done, now_goal):
 
 
     return -1.0
