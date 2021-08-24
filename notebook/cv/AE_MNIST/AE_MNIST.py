@@ -94,10 +94,6 @@ def AutoEncoder(input_shape, compressed_shape):
         # Define auto-encoder
         encoder = get_encoder(input_shape=input_shape, compressed_shape=compressed_shape)
         decoder = get_decoder(input_shape=input_shape, compressed_shape=compressed_shape)
-        # encoder.compile(optimizer=Adam(learning_rate=learning_rate), loss=MeanSquaredError())
-        # decoder.compile(optimizer=Adam(learning_rate=learning_rate), loss=MeanSquaredError())
-        # encoder.summary()
-        # decoder.summary()
 
         # Connect encoder with decoder
         encoder_in = Input(shape=input_shape)

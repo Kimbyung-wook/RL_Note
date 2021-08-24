@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 from env_config  import env_configs
 from pys.agent.dqn_agent import DQNAgent
 from pys.agent.mdqn_agent import MDQNAgent
+
 from pys.gyms.functions import mountain_car_done as done_function
 from pys.gyms.functions import mountain_car_reward as reward_function
 
@@ -30,12 +31,12 @@ if gpus:
 #             ('DDPG','ER'),('DDPG','PER'),('DDPG','HER'),\
 #         )
 lists = (
-            # ('MDQN','PER'),\
-            # ('MDQN','ER'),\
-            # ('MDQN','HER'),\
             # ('DQN','ER'),\
             # ('DQN','PER'),\
-            ('DQN','HER'),\
+            # ('DQN','HER'),\
+            # ('MDQN','ER'),\
+            # ('MDQN','PER'),\
+            # ('MDQN','HER'),\
         )
 print('Batch list : ',lists)
 if __name__ == "__main__":
@@ -46,6 +47,9 @@ if __name__ == "__main__":
                 "ENV":"MountainCar-v0",\
                 "RL":{
                     "ALGORITHM":item[0],\
+                    "TYPE":None,\
+                    # "TYPE":'DOUBLE',\ # DQN
+                    # "TYPE":'DEULING',\ # DQN
                     "NETWORK":{
                         "LAYER":[128,128],\
                     }
@@ -59,14 +63,15 @@ if __name__ == "__main__":
                         "DONE_FUNC":done_function,\
                     },\
                 "BATCH_SIZE":64,\
-                "TRAIN_START":2000,\
-                "MEMORY_SIZE":200000,\
+                "TRAIN_START":500,\
+                "MEMORY_SIZE":20000,\
+                "ADD_NAME":""
                 }
         env_config = env_configs[cfg["ENV"]]
+        FILENAME = cfg["ENV"] + '_' + cfg["RL"]["ALGORITHM"] + '_' + cfg["ER"]["ALGORITHM"]
         if cfg["ER"]["ALGORITHM"] == "HER":
-            FILENAME = cfg["ENV"] + '_' + cfg["RL"]["ALGORITHM"] + '_' + cfg["ER"]["ALGORITHM"] + '_' + cfg["ER"]["STRATEGY"]
-        else:
-            FILENAME = cfg["ENV"] + '_' + cfg["RL"]["ALGORITHM"] + '_' + cfg["ER"]["ALGORITHM"]
+            FILENAME = FILENAME + '_' + cfg["ER"]["STRATEGY"]
+        FILENAME = FILENAME + '_' + cfg["ADD_NAME"]
         EPISODES = env_config["EPISODES"]
         END_SCORE = env_config["END_SCORE"]
 
@@ -96,14 +101,14 @@ if __name__ == "__main__":
             loss_list = []
             state = env.reset()
             while not done:
-                if e % 100 == 0:
-                    env.render()
+                # if e % 100 == 0:
+                #     env.render()
                 # Interact with env.
                 action = agent.get_action(state)
                 next_state, reward, done, info = env.step(action)
                 agent.remember(state, action, reward, next_state, done, goal)
                 loss = agent.train_model()
-                agent.update_network()
+                agent.update_network(done)
                 state = next_state
                 # 
                 score += reward

@@ -1,4 +1,5 @@
 import random
+from typing_extensions import Concatenate
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.layers import Input
@@ -13,9 +14,13 @@ class DQNAgent:
         self.state_size = env.observation_space.shape[0]
         self.action_size= env.action_space.n
         self.env_name   = cfg["ENV"]
-        self.rl_type    = "DQN"
+        self.rl_name    = "DQN"
+        self.rl_type    = cfg['RL']['TYPE']
         self.er_type    = cfg["ER"]["ALGORITHM"].upper()
-        self.filename   = cfg["ENV"] + '_' + cfg["RL"]["ALGORITHM"] + '_' + cfg["ER"]["ALGORITHM"]
+        self.filename = cfg["ENV"] + '_' + cfg["RL"]["ALGORITHM"] + '_' + cfg["ER"]["ALGORITHM"]
+        if cfg["ER"]["ALGORITHM"] == "HER":
+            self.filename = self.filename + '_' + cfg["ER"]["STRATEGY"]
+        self.filename = self.filename + '_' + cfg["ADD_NAME"]
 
         # Experience Replay
         self.batch_size = cfg["BATCH_SIZE"]
@@ -32,7 +37,6 @@ class DQNAgent:
                 replay_strategy     = cfg["ER"]["STRATEGY"],\
                 reward_func         = cfg["ER"]["REWARD_FUNC"],\
                 done_func           = cfg["ER"]["DONE_FUNC"])
-            self.filename = cfg["ENV"] + '_' + cfg["RL"]["ALGORITHM"] + '_' + cfg["ER"]["ALGORITHM"] + '_' + cfg["ER"]["STRATEGY"]
 
         # Hyper-parameters for learning
         self.discount_factor = 0.99
@@ -43,8 +47,11 @@ class DQNAgent:
         self.tau = 0.005
         
         # Neural Network Architecture
-        self.model        = QNetwork(self.state_size, self.action_size, cfg["RL"]["NETWORK"])
-        self.target_model = QNetwork(self.state_size, self.action_size, cfg["RL"]["NETWORK"])
+        self.q_net        = QNetwork(self.state_size, self.action_size, cfg["RL"]["NETWORK"])
+        self.target_q_net = QNetwork(self.state_size, self.action_size, cfg["RL"]["NETWORK"])
+        if self.rl_type == "DEULING":
+            self.a_net        = QNetwork(self.state_size+self.action_size, self.action_size, cfg["RL"]["NETWORK"])
+            self.target_a_net = QNetwork(self.state_size+self.action_size, self.action_size, cfg["RL"]["NETWORK"])  
         self.optimizer = tf.keras.optimizers.Adam(learning_rate=self.learning_rate)
         self.hard_update_target_model()
         
@@ -72,13 +79,20 @@ class DQNAgent:
         return
         
     def hard_update_target_model(self):
-        self.target_model.set_weights(self.model.get_weights())
+        self.target_q_net.set_weights(self.q_net.get_weights())
+        if self.rl_type == "DEULING":
+            self.target_a_net.set_weights(self.a_net.get_weights())
+
 
     def soft_update_target_model(self):
         tau = self.tau
-        for (net, target_net) in zip(   self.model.trainable_variables,
-                                        self.target_model.trainable_variables):
+        for (net, target_net) in zip(   self.q_net.trainable_variables,
+                                        self.target_q_net.trainable_variables):
             target_net.assign(tau * net + (1.0 - tau) * target_net)
+        if self.rl_type == "DEULING":
+            for (net, target_net) in zip(   self.q_net.trainable_variables,
+                                            self.target_q_net.trainable_variables):
+                target_net.assign(tau * net + (1.0 - tau) * target_net)
 
     def get_action(self,state):
         self.steps += 1
@@ -87,7 +101,7 @@ class DQNAgent:
             return random.randrange(self.action_size)
         else:
             state = tf.convert_to_tensor([state], dtype=tf.float32)
-            return np.argmax(self.model(state))
+            return np.argmax(self.q_net(state))
         
     def train_model(self):
         # Train from Experience Replay
@@ -122,21 +136,24 @@ class DQNAgent:
                 goals = tf.convert_to_tensor(np.array([sample[5] for sample in mini_batch]))
                 print('**** shape of goals', np.shape(goals),type(goals))
 
-        model_params = self.model.trainable_variables
+        model_params = self.q_net.trainable_variables
         with tf.GradientTape() as tape:
             # get q value
-            q = self.model(states)
+            q = self.q_net(states) + self.a_net(Concatenate([states, actions],axis=1))
             one_hot_action = tf.one_hot(actions, self.action_size)
             q = tf.reduce_sum(one_hot_action * q, axis=1)
             q = tf.expand_dims(q,axis=1)
             # Target q and maximum target q
-            target_q = tf.stop_gradient(self.target_model(next_states))
+            target_q = tf.stop_gradient(self.target_q_net(next_states))
             max_q = tf.reduce_max(target_q,axis=1)
             max_q = tf.expand_dims(max_q,axis=1)
             
             targets = rewards + (1 - dones) * self.discount_factor * max_q
             td_error = targets - q
-            loss = tf.reduce_mean(tf.square(targets - q))
+            if self.er_type == "PER":
+                loss = tf.reduce_mean(is_weights * tf.square(targets - q))
+            else:
+                loss = tf.reduce_mean(tf.square(targets - q))
             
         grads = tape.gradient(loss, model_params)
         self.optimizer.apply_gradients(zip(grads, model_params))
@@ -148,17 +165,19 @@ class DQNAgent:
 
         return loss
 
-    def update_network(self):
-        if self.steps % self.update_period != 0:
-            self.soft_update_target_model()
-        return
+    def update_network(self,done=False):
+        if done == True:
+            self.hard_update_target_model()
+        # if self.steps % self.update_period != 0:
+        #     self.soft_update_target_model()
+        # return
 
     def load_model(self,at):
-        self.model.load_weights( at + self.filename + "_TF")
-        self.target_model.load_weights(at + self.filename + "_TF")
+        self.q_net.load_weights( at + self.filename + "_TF")
+        self.target_q_net.load_weights(at + self.filename + "_TF")
         return
 
     def save_model(self,at):
-        self.model.save_weights( at + self.filename + "_TF", save_format="tf")
-        self.target_model.save_weights(at + self.filename + "_TF", save_format="tf")
+        self.q_net.save_weights( at + self.filename + "_TF", save_format="tf")
+        self.target_q_net.save_weights(at + self.filename + "_TF", save_format="tf")
         return

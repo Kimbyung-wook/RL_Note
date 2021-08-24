@@ -100,8 +100,8 @@ class MDQNAgent:
         if len(self.memory) < self.train_start:
             return 0.0
         # Interaction period
-        if self.steps % self.interaction_period != 0:
-            return 0.0
+        # if self.steps % self.interaction_period == 0:
+        #     return 0.0
         # Decaying Exploration Ratio
         if self.epsilon > self.epsilon_min:
             self.epsilon *= self.epsilon_decay
@@ -164,11 +164,14 @@ class MDQNAgent:
             term_2nd = self.discount_factor * \
                 tf.reduce_sum(target_pi * (target_next_q - target_next_log_pi) * (1 - dones), axis=1)
 
-            target_y = term_1st + term_2nd
+            targets = term_1st + term_2nd
             
             # Compute loss
-            td_error = target_y - q
-            loss = tf.reduce_mean(tf.square(target_y - q))
+            td_error = targets - q
+            if self.er_type == "PER":
+                loss = tf.reduce_mean(is_weights * tf.square(targets - q))
+            else:
+                loss = tf.reduce_mean(tf.square(targets - q))
             
         grads = tape.gradient(loss, model_params)
         self.optimizer.apply_gradients(zip(grads, model_params))
@@ -180,10 +183,11 @@ class MDQNAgent:
 
         return loss
 
-    def update_network(self):
-        if self.steps % self.update_period != 0:
-        # if self.is_done:
-            self.soft_update_target_model()
+    def update_network(self,done = False):
+        # if self.steps % self.update_period != 0:
+        #     self.soft_update_target_model()
+        if done == True:
+            self.hard_update_target_model()
         return
 
     def load_model(self,at):

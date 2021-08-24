@@ -18,7 +18,10 @@ class TD3Agent:
         self.env_name   = cfg["ENV"]
         self.rl_type    = "TD3"
         self.er_type    = cfg["ER"]["ALGORITHM"].upper()
-        self.filename   = cfg["ENV"] + '_' + cfg["RL"]["ALGORITHM"] + '_' + cfg["ER"]["ALGORITHM"]
+        self.filename = cfg["ENV"] + '_' + cfg["RL"]["ALGORITHM"] + '_' + cfg["ER"]["ALGORITHM"]
+        if cfg["ER"]["ALGORITHM"] == "HER":
+            self.filename = self.filename + '_' + cfg["ER"]["STRATEGY"]
+        self.filename = self.filename + '_' + cfg["ADD_NAME"]
 
         # Experience Replay
         self.batch_size = cfg["BATCH_SIZE"]
@@ -35,7 +38,6 @@ class TD3Agent:
                 replay_strategy     = cfg["ER"]["STRATEGY"],\
                 reward_func         = cfg["ER"]["REWARD_FUNC"],\
                 done_func           = cfg["ER"]["DONE_FUNC"])
-            self.filename = cfg["ENV"] + '_' + cfg["RL"]["ALGORITHM"] + '_' + cfg["ER"]["ALGORITHM"] + '_' + cfg["ER"]["STRATEGY"]
         
         # Hyper params for learning
         self.discount_factor = 0.99
@@ -116,16 +118,17 @@ class TD3Agent:
 
     def get_action(self,state):
         state = tf.convert_to_tensor([state], dtype=tf.float32)
-        action = self.actor(state)
+        action = self.actor(state).numpy()[0]
         noise = np.random.randn(self.action_size)*self.noise_std_dev + self.noise_mean
         # Exploration and Exploitation
-        return np.clip(action.numpy()[0]+noise,self.action_min,self.action_max)
+        return np.clip(action+noise,self.action_min,self.action_max)
 
     def train_model(self):
         # Train from Experience Replay
         # Training Condition - Memory Size
         if len(self.memory) < self.train_start:
             return 0.0, 0.0
+        self.train_idx = self.train_idx + 1
         # Sampling from the memory
         if self.er_type == "ER" or self.er_type == "HER":
             mini_batch = self.memory.sample(self.batch_size)
@@ -175,8 +178,8 @@ class TD3Agent:
         self.critic1_optimizer.apply_gradients(zip(critic1_grads, critic1_params))
         self.critic2_optimizer.apply_gradients(zip(critic2_grads, critic2_params))
 
+        # Update actor
         actor_loss_out = 0.0
-        self.train_idx = self.train_idx + 1
         if self.train_idx % self.update_freq == 0:
             with tf.GradientTape() as tape:
                 new_actions = self.actor(states,training=True)
@@ -186,7 +189,6 @@ class TD3Agent:
             actor_params = self.actor.trainable_variables
             actor_grads = tape.gradient(actor_loss, actor_params)
             self.actor_optimizer.apply_gradients(zip(actor_grads, actor_params))
-            self.soft_update_target_model()
 
         if self.er_type == "PER":
             sample_importance = td_error.numpy()
@@ -195,6 +197,11 @@ class TD3Agent:
 
         critic_loss_out = 0.5*(critic1_loss.numpy() + critic2_loss.numpy())
         return critic_loss_out, actor_loss_out
+
+    def update_network(self,done=False):
+        if self.train_idx % self.update_freq == 0:
+            self.soft_update_target_model()
+        return
         
     def load_model(self,at):
         self.actor.load_weights(  at + self.filename + "_TF_actor")
