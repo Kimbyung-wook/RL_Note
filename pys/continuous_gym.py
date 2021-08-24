@@ -1,16 +1,14 @@
-
 # Find RL_Note path and append sys path
-import os
-import sys
-
+import os, sys
 cwd = os.getcwd()
-pos = cwd.find('RL_Note')
-root_path = cwd[0:pos] + 'RL_Note'
+dir_name = 'RL_note'
+pos = cwd.find(dir_name)
+root_path = cwd[0:pos] + dir_name
 sys.path.append(root_path)
 print(root_path)
 workspace_path = root_path + "\\pys"
-import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' 
+
 import gym
 import random
 import numpy as np
