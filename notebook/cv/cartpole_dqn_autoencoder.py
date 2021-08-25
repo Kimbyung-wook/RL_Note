@@ -38,15 +38,20 @@ def get_encoder(input_shape, compressed_shape):
     X_input = Input(shape=input_shape, name='Input')
     X = X_input
     X = Conv2D(filters=32, kernel_size=4, strides=2, padding='SAME', \
-                data_format="channels_last", activation='relu', name='Encoder1')(X)
+                data_format="channels_last", name='Encoder1')(X)
+    X = BatchNormalization(name="BN1")(X)
+    X = ReLU(name='Relu1')(X)
     X = MaxPool2D(          pool_size=2,padding='SAME', name='MaxPool1')(X)
 
     X = Conv2D(filters=64, kernel_size=4, strides=2, padding='SAME', \
-                data_format="channels_last", activation='relu', name='Encoder2')(X)
+                data_format="channels_last", name='Encoder2')(X)
+    X = BatchNormalization(name="BN2")(X)
+    X = ReLU(name='Relu2')(X)
     X = MaxPool2D(          pool_size=2,padding='SAME', name='MaxPool2')(X)
 
     X = Conv2D(filters=128, kernel_size=2, strides=1, padding='SAME', \
-                data_format="channels_last", activation='relu', name='Encoder3')(X)
+                data_format="channels_last", name='Encoder3')(X)
+    X = ReLU(name='Relu3')(X)
 
     X = Flatten(name='Flattening')(X)
     encoder_output = Dense(compressed_shape[0], activation='linear', \
@@ -64,17 +69,22 @@ def get_decoder(input_shape, compressed_shape):
     X = Reshape((6,8,128), name='Reshape')(X)
 
     X = Conv2DTranspose(filters=128, kernel_size=2, strides=1, padding='SAME', \
-                data_format="channels_last", activation='relu', name='Decoder1')(X)
+                data_format="channels_last", name='Decoder1')(X)
+    X = BatchNormalization(name="BN1")(X)
+    X = ReLU(name='Relu1')(X)
     X = UpSampling2D(          size=2, interpolation='nearest',\
                 data_format="channels_last", name='UpSampling1')(X)
 
     X = Conv2DTranspose(filters=64, kernel_size=4, strides=2, padding='SAME', \
-                data_format="channels_last", activation='relu', name='Decoder2')(X)
+                data_format="channels_last", name='Decoder2')(X)
+    X = BatchNormalization(name="BN2")(X)
+    X = ReLU(name='Relu2')(X)
     X = UpSampling2D(          size=2, interpolation='nearest',\
                 data_format="channels_last", name='UpSampling2')(X)
 
     X = Conv2DTranspose(filters=32, kernel_size=4, strides=2, padding='SAME', \
-                data_format="channels_last", activation='relu', name='Decoder3')(X)
+                data_format="channels_last", name='Decoder3')(X)
+    X = ReLU(name='Relu3')(X)
 
     # X = Conv2DTranspose(filters=32, kernel_size=8, strides=4, padding='SAME', \
     #             data_format="channels_last", name='Decoder4')(X)
@@ -157,8 +167,9 @@ class DQNAgent:
         self.train_period_ae = 500
         self.batch_size_ae = 500
         self.do_train_ae = False
-        self.is_fit = False
+        self.is_fit = True
         self.hist = None
+        self.fit_criterion = 0.98
         # self.image_cols = self.state_size[1]
         # self.image_rows = self.state_size[2]
 
@@ -275,8 +286,25 @@ class DQNAgent:
         return loss
 
     def train_auto_encoder(self):
+        # Check model accurac for training
         if self.is_fit:
-            return
+            # Sampling from the memory
+            if self.er_type == "ER" or self.er_type == "HER":
+                mini_batch = self.memory.sample(self.batch_size_ae)
+            elif self.er_type == "PER":
+                mini_batch, _, _ = self.memory.sample(self.batch_size_ae)
+            x_train = tf.convert_to_tensor(np.array([sample[0] for sample in mini_batch]))
+
+            evaluated = self.auto_encoder.evaluate(x_train,x_train,verbose=2)
+            # print(evaluated)
+            loss = evaluated[0]; acc = evaluated[1]
+            print('Evaluation loss {:.6f}, accuracy {:.4f} %'.format(loss,acc*100.0))
+            if acc < self.fit_criterion:
+                print('Re-train Autoencoder')
+                self.is_fit = False
+            else:
+                return
+            
         print('***** Train Auto-Encoder *****')
         # Sampling from the memory
         if self.er_type == "ER" or self.er_type == "HER":
@@ -284,7 +312,6 @@ class DQNAgent:
         elif self.er_type == "PER":
             mini_batch, idxs, is_weights = self.memory.sample(self.batch_size_ae)
         x_train = tf.convert_to_tensor(np.array([sample[0] for sample in mini_batch]))
-        # print('x_train shape : ',np.shape(x_train))
         checkpoint_path = 'cartpole_auto_encoder.ckpt'
         # Train
         checkpoint = ModelCheckpoint(checkpoint_path, 
@@ -299,7 +326,6 @@ class DQNAgent:
                                     validation_split=0.1,
                                     verbose=1
                                     )
-        # print(hist.history['accuracy'])
         fig = plt.figure(2)
         loss_ax = plt.subplot()
         acc_ax  = plt.twinx()
@@ -311,8 +337,8 @@ class DQNAgent:
         plt.savefig('Learning Process of Auto-Encoder.jpg')
         self.auto_encoder.save_weights(checkpoint_path)
         print('Save model weights')
-        if hist.history['accuracy'][-1] > 0.9:    
-            print('Accuracy of Auto-Encoder is {:.2f}, over 90\%'.format(hist.history['acc'][1][-1]*100.0))
+        if hist.history['accuracy'][-1] > self.fit_criterion:    
+            print('Accuracy of Auto-Encoder is {:.2f}, over 90%'.format(hist.history['accuracy'][-1]*100.0))
             self.is_fit = True
         return
 
