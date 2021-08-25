@@ -17,7 +17,11 @@ import cv2
 
 import tensorflow as tf
 from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Input, Dense, Conv2D, Conv2DTranspose, Flatten, Dropout, BatchNormalization, Reshape, LeakyReLU, ReLU
+from tensorflow.keras.layers import Input, Dense, Reshape, LeakyReLU, ReLU
+from tensorflow.keras.layers import Flatten, Dropout, BatchNormalization
+from tensorflow.keras.layers import MaxPool2D, UpSampling2D, Conv2D, Conv2DTranspose
+from tensorflow_addons.layers import MaxUnpooling2D
+from tensorflow.keras.activations import tanh as Tanh
 from tensorflow.keras.losses import MeanSquaredError, BinaryCrossentropy
 from tensorflow.keras.optimizers import Adam, RMSprop
 from tensorflow.keras.callbacks import ModelCheckpoint
@@ -28,30 +32,21 @@ from pys.utils.hindsight_memory import HindsightMemory
 from pys.model.q_network import QNetwork
 from pys.env_config import env_configs
 
-img_size = (256,192)
+img_size = (128,96)
 
 def get_encoder(input_shape, compressed_shape):
     X_input = Input(shape=input_shape, name='Input')
     X = X_input
-    X = Conv2D(filters=32, kernel_size=8, strides=4, padding='same', \
-                data_format="channels_last", name='Encoder1')(X)
-    X = BatchNormalization(name="BN1")(X)
-    X = LeakyReLU(name='LReLU1')(X)
+    X = Conv2D(filters=32, kernel_size=4, strides=2, padding='SAME', \
+                data_format="channels_last", activation='relu', name='Encoder1')(X)
+    X = MaxPool2D(          pool_size=2,padding='SAME', name='MaxPool1')(X)
 
-    X = Conv2D(filters=64, kernel_size=8, strides=4, padding='same', \
-                data_format="channels_last", name='Encoder2')(X)
-    X = BatchNormalization(name="BN2")(X)
-    X = LeakyReLU(name='LReLU2')(X)
+    X = Conv2D(filters=64, kernel_size=4, strides=2, padding='SAME', \
+                data_format="channels_last", activation='relu', name='Encoder2')(X)
+    X = MaxPool2D(          pool_size=2,padding='SAME', name='MaxPool2')(X)
 
-    X = Conv2D(filters=64, kernel_size=4, strides=2, padding='same', \
-                data_format="channels_last", name='Encoder3')(X)
-    X = BatchNormalization(name="BN3")(X)
-    X = LeakyReLU(name='LReLU3')(X)
-
-    X = Conv2D(filters=128, kernel_size=4, strides=2, padding='same', \
-                data_format="channels_last", name='Encoder4')(X)
-    X = BatchNormalization(name="BN4")(X)
-    X = LeakyReLU(name='LReLU4')(X)
+    X = Conv2D(filters=128, kernel_size=2, strides=1, padding='SAME', \
+                data_format="channels_last", activation='relu', name='Encoder3')(X)
 
     X = Flatten(name='Flattening')(X)
     encoder_output = Dense(compressed_shape[0], activation='linear', \
@@ -64,32 +59,30 @@ def get_decoder(input_shape, compressed_shape):
     X_input = Input(shape=compressed_shape, name='Input')
     X = X_input
 
-    X = Dense(units=3*4*128, activation='linear', \
+    X = Dense(units=6*8*128, activation='linear', \
                 name='DeFlattening')(X)
-    X = Reshape((4,3,128), name='Reshape')(X)
+    X = Reshape((6,8,128), name='Reshape')(X)
 
-    X = Conv2DTranspose(filters=128, kernel_size=4, strides=2, padding='same', \
-                data_format="channels_last", name='Decoder1')(X)
-    X = BatchNormalization(name="BN1")(X)
-    X = LeakyReLU(name='LReLU1')(X)
+    X = Conv2DTranspose(filters=128, kernel_size=2, strides=1, padding='SAME', \
+                data_format="channels_last", activation='relu', name='Decoder1')(X)
+    X = UpSampling2D(          size=2, interpolation='nearest',\
+                data_format="channels_last", name='UpSampling1')(X)
 
-    X = Conv2DTranspose(filters=64, kernel_size=4, strides=2, padding='same', \
-                data_format="channels_last", name='Decoder2')(X)
-    X = BatchNormalization(name="BN2")(X)
-    X = LeakyReLU(name='LReLU2')(X)
+    X = Conv2DTranspose(filters=64, kernel_size=4, strides=2, padding='SAME', \
+                data_format="channels_last", activation='relu', name='Decoder2')(X)
+    X = UpSampling2D(          size=2, interpolation='nearest',\
+                data_format="channels_last", name='UpSampling2')(X)
 
-    X = Conv2DTranspose(filters=64, kernel_size=8, strides=4, padding='same', \
-                data_format="channels_last", name='Decoder3')(X)
-    X = BatchNormalization(name="BN3")(X)
-    X = LeakyReLU(name='LReLU3')(X)
+    X = Conv2DTranspose(filters=32, kernel_size=4, strides=2, padding='SAME', \
+                data_format="channels_last", activation='relu', name='Decoder3')(X)
 
-    X = Conv2DTranspose(filters=32, kernel_size=8, strides=4, padding='same', \
-                data_format="channels_last", name='Decoder4')(X)
-    X = BatchNormalization(name="BN4")(X)
-    X = LeakyReLU(name='LReLU4')(X)
+    # X = Conv2DTranspose(filters=32, kernel_size=8, strides=4, padding='SAME', \
+    #             data_format="channels_last", name='Decoder4')(X)
+    # X = BatchNormalization(name="BN4")(X)
+    # X = LeakyReLU(name='ReLU4')(X)
 
-    decoder_output = Conv2DTranspose(filters=1, kernel_size=3, strides=1, padding='same', \
-                data_format="channels_last", name='Decoder_out', activation='tanh')(X)
+    decoder_output = Conv2DTranspose(filters=1, kernel_size=4, strides=1, padding='SAME', \
+                data_format="channels_last", activation='tanh', name='Decoder_out')(X)
     decoder_model = Model(inputs=X_input, outputs=decoder_output, name='Decoder')
     
     return decoder_model
@@ -107,10 +100,10 @@ def AutoEncoder(input_shape, compressed_shape):
         print('compressed_shape : ',compressed_shape)
         encoder = get_encoder(input_shape=input_shape, compressed_shape=compressed_shape)
         decoder = get_decoder(input_shape=input_shape, compressed_shape=compressed_shape)
-        # encoder.compile(optimizer=Adam(learning_rate=learning_rate), loss=MeanSquaredError())
-        # decoder.compile(optimizer=Adam(learning_rate=learning_rate), loss=MeanSquaredError())
-        # encoder.summary()
-        # decoder.summary()
+        encoder.compile(optimizer=Adam(learning_rate=learning_rate), loss=MeanSquaredError())
+        decoder.compile(optimizer=Adam(learning_rate=learning_rate), loss=MeanSquaredError())
+        encoder.summary()
+        decoder.summary()
 
         # Connect encoder with decoder
         encoder_in = Input(shape=input_shape)
@@ -124,7 +117,7 @@ def AutoEncoder(input_shape, compressed_shape):
 
 class DQNAgent:
     def __init__(self, env:object, cfg:dict):
-        self.state_size = (img_size[0],img_size[1], 1)
+        self.state_size = (img_size[1], img_size[0],1)
         self.action_size= env.action_space.n
         self.env_name   = cfg["ENV"]
         self.rl_type    = "DQN"
@@ -160,9 +153,10 @@ class DQNAgent:
         self.compressed_shape = (4,)
         self.auto_encoder, self.encoder, self.decoder = AutoEncoder(self.state_size, self.compressed_shape)
         self.train_period_ae = 1000
+        self.batch_size_ae = 1000
         self.do_train_ae = False
-        self.image_cols = self.state_size[1]
-        self.image_rows = self.state_size[2]
+        # self.image_cols = self.state_size[1]
+        # self.image_rows = self.state_size[2]
 
         # Neural Network Architecture
         self.model        = QNetwork(self.compressed_shape, self.action_size, cfg["RL"]["NETWORK"])
@@ -219,24 +213,7 @@ class DQNAgent:
             return 0.0
         # For Auto-Encoder
         if (self.steps % self.train_period_ae == 0):
-            print('***** Train Auto-Encoder *****')
-            # Sampling from the memory
-            x_train = tf.convert_to_tensor(np.array([sample[0] for sample in self.memory.buffer]))
-            # print('x_train shape : ',np.shape(x_train))
-            checkpoint_path = 'cartpole_auto_encoder.ckpt'
-            # Train
-            checkpoint = ModelCheckpoint(checkpoint_path, 
-                                        save_best_only=True, 
-                                        save_weights_only=True, 
-                                        monitor='loss', 
-                                        verbose=1)
-            self.auto_encoder.fit(x_train, x_train, 
-                            batch_size=len(self.memory), 
-                            epochs=100, 
-                            callbacks=[checkpoint], 
-                            )
-            self.auto_encoder.save_weights(checkpoint_path)
-            print('Save model weights')
+            self.do_train_ae = True
         # Decaying Exploration Ratio
         if self.epsilon > self.epsilon_min:
             self.epsilon *= self.epsilon_decay
@@ -300,6 +277,30 @@ class DQNAgent:
         return
 
     def episode_update(self):
+        if self.do_train_ae == True:
+            self.do_train_ae = False
+            print('***** Train Auto-Encoder *****')
+            # Sampling from the memory
+            if self.er_type == "ER" or self.er_type == "HER":
+                mini_batch = self.memory.sample(self.batch_size_ae)
+            elif self.er_type == "PER":
+                mini_batch, idxs, is_weights = self.memory.sample(self.batch_size_ae)
+            x_train = tf.convert_to_tensor(np.array([sample[0] for sample in mini_batch]))
+            # print('x_train shape : ',np.shape(x_train))
+            checkpoint_path = 'cartpole_auto_encoder.ckpt'
+            # Train
+            checkpoint = ModelCheckpoint(checkpoint_path, 
+                                        save_best_only=True, 
+                                        save_weights_only=True, 
+                                        monitor='loss', 
+                                        verbose=1)
+            self.auto_encoder.fit(x_train, x_train, 
+                            batch_size=self.batch_size_ae, 
+                            epochs=20, 
+                            callbacks=[checkpoint], 
+                            )
+            self.auto_encoder.save_weights(checkpoint_path)
+            print('Save model weights')
         return
 
     def load_model(self,at:str):
@@ -312,15 +313,22 @@ class DQNAgent:
         self.target_model.save_weights(at + self.filename + "_TF", save_format="tf")
         return
 
-    def get_image(env:object):
-        img = env.render(mode='rgb_array')
+    # def get_image(env:object):
+    #     img = env.render(mode='rgb_array')
         
-        img_rgb = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-        img_rgb_resize = cv2.resize(img_rgb, (self.image_rows,self.image_cols), interpolation=cv2.INTER_CUBIC)
-        img_k_resize = cv2.cvtColor(img_rgb_resize,cv2.COLOR_RGB2GRAY)
+    #     img_rgb = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+    #     img_rgb_resize = cv2.resize(img_rgb, (self.image_rows,self.image_cols), interpolation=cv2.INTER_CUBIC)
+    #     img_k_resize = cv2.cvtColor(img_rgb_resize,cv2.COLOR_RGB2GRAY)
         
         # return np.expand_dims(img_k_resize, axis=0)
         return img_k_resize
+
+def get_image(img_rgb):
+    img_rgb_resize = cv2.resize(img_rgb, (img_size[0],img_size[1]), interpolation=cv2.INTER_CUBIC)
+    img_k_resize = cv2.cvtColor(img_rgb_resize,cv2.COLOR_RGB2GRAY)
+    img_k_resize = img_k_resize / 255.0
+    state = img_k_resize
+    return state
 
 if __name__ == "__main__":
     cfg = {\
@@ -335,14 +343,14 @@ if __name__ == "__main__":
             "ER":
                 {
                     "ALGORITHM":"ER",\
-                    "REPLAY_N":8,\
+                    "REPLAY_N":64,\
                     "STRATEGY":"EPISODE",\
                     # "REWARD_FUNC":reward_function,\
                     # "DONE_FUNC":done_function,\
                 },\
-            "BATCH_SIZE":8,\
-            "TRAIN_START":3000,\
-            "MEMORY_SIZE":20000,\
+            "BATCH_SIZE":32,\
+            "TRAIN_START":2000,\
+            "MEMORY_SIZE":100000,\
             }
     env_config = env_configs[cfg["ENV"]]
     if cfg["ER"]["ALGORITHM"] == "HER":
@@ -372,19 +380,12 @@ if __name__ == "__main__":
         score = 0
         loss_list = []
         state = env.reset()
-        img_rgb = env.render(mode='rgb_array')
-        # print(np.shape(img_rgb))
-        img_rgb_resize = cv2.resize(img_rgb, (img_size[0],img_size[1]), interpolation=cv2.INTER_CUBIC)
-        img_k_resize = cv2.cvtColor(img_rgb_resize,cv2.COLOR_RGB2GRAY)
-        state = img_k_resize.transpose()
+        state = get_image(env.render(mode='rgb_array'))
         while not done:
             # Interact with env.
             action = agent.get_action(state)
             next_state, reward, done, info = env.step(action)
-            img_rgb = env.render(mode='rgb_array')
-            img_rgb_resize = cv2.resize(img_rgb, (img_size[0],img_size[1]), interpolation=cv2.INTER_CUBIC)
-            img_k_resize = cv2.cvtColor(img_rgb_resize,cv2.COLOR_RGB2GRAY)
-            next_state = img_k_resize.transpose()
+            next_state = get_image(env.render(mode='rgb_array'))
             agent.remember(state, action, reward, next_state, done, goal)
             loss = agent.train_model()
             agent.step_update()
@@ -424,7 +425,7 @@ if __name__ == "__main__":
                 plt.subplot(313)
                 plt.plot(episodes, losses, 'b')
                 plt.xlabel('episode'); plt.ylabel('losses') ;plt.grid()
-                # plt.savefig(workspace_path + "\\result\\img\\" + FILENAME + "_TF.jpg", dpi=100)
+                plt.savefig(workspace_path + "\\result\\img\\" + FILENAME + "_TF.jpg", dpi=100)
 
                 # 이동 평균이 0 이상일 때 종료
                 if score_avg > END_SCORE:
