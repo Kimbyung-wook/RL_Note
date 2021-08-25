@@ -1,7 +1,7 @@
 # Find RL_Note path and append sys path
 import os, sys
 cwd = os.getcwd()
-dir_name = 'RL_Note'
+dir_name = 'RL_note'
 pos = cwd.find(dir_name)
 root_path = cwd[0:pos] + dir_name
 sys.path.append(root_path)
@@ -23,6 +23,7 @@ from tensorflow.keras.layers import MaxPool2D, UpSampling2D, Conv2D, Conv2DTrans
 from tensorflow.keras.activations import tanh as Tanh
 from tensorflow.keras.losses import MeanSquaredError, BinaryCrossentropy
 from tensorflow.keras.optimizers import Adam, RMSprop
+# from tensorflow.keras.metrics import Accuracy, MeanSquaredError
 from tensorflow.keras.callbacks import ModelCheckpoint
 
 from pys.utils.memory import ReplayMemory
@@ -99,17 +100,19 @@ def AutoEncoder(input_shape, compressed_shape):
         print('compressed_shape : ',compressed_shape)
         encoder = get_encoder(input_shape=input_shape, compressed_shape=compressed_shape)
         decoder = get_decoder(input_shape=input_shape, compressed_shape=compressed_shape)
-        encoder.compile(optimizer=Adam(learning_rate=learning_rate), loss=MeanSquaredError())
-        decoder.compile(optimizer=Adam(learning_rate=learning_rate), loss=MeanSquaredError())
-        encoder.summary()
-        decoder.summary()
+        # encoder.compile(optimizer=Adam(learning_rate=learning_rate), loss=MeanSquaredError())
+        # decoder.compile(optimizer=Adam(learning_rate=learning_rate), loss=MeanSquaredError())
+        # encoder.summary()
+        # decoder.summary()
 
         # Connect encoder with decoder
         encoder_in = Input(shape=input_shape)
         decoder_out= decoder(encoder(encoder_in))
         
         auto_encoder = Model(inputs=encoder_in, outputs=decoder_out)
-        auto_encoder.compile(optimizer=Adam(learning_rate=learning_rate), loss=MeanSquaredError())
+        auto_encoder.compile(   optimizer=Adam(learning_rate=learning_rate),\
+                                loss=MeanSquaredError(),\
+                                metrics=[['accuracy'], ['mse']])
         # auto_encoder.compile(optimizer=Adam(learning_rate=learning_rate), loss=BinaryCrossentropy())
         auto_encoder.summary()
         return auto_encoder, encoder, decoder
@@ -151,8 +154,8 @@ class DQNAgent:
         # Auto Encoder
         self.compressed_shape = (4,)
         self.auto_encoder, self.encoder, self.decoder = AutoEncoder(self.state_size, self.compressed_shape)
-        self.train_period_ae = 1000
-        self.batch_size_ae = 1000
+        self.train_period_ae = 500
+        self.batch_size_ae = 500
         self.do_train_ae = False
         self.is_fit = False
         self.hist = None
@@ -296,18 +299,19 @@ class DQNAgent:
                                     validation_split=0.1,
                                     verbose=1
                                     )
-        plt.figure(2)
-        loss_ax = plt.subplots()
-        acc_ax = loss_ax.twinx()
-        loss_ax.plot(hist.history['loss'],label='loss'); loss_ax.plot(hist.history['val_loss'],label='loss_val');
+        # print(hist.history['accuracy'])
+        fig = plt.figure(2)
+        loss_ax = plt.subplot()
+        acc_ax  = plt.twinx()
+        loss_ax.plot(hist.history['loss'],label='loss'); loss_ax.plot(hist.history['val_loss'],label='val_loss')
         loss_ax.set_xlabel('episode'); loss_ax.set_ylabel('loss')
-        acc_ax.plot(hist.history['accuracy'],label='acc');acc_ax.plot(hist.history['val_accuracy'],label='acc_val');
+        acc_ax.plot(hist.history['accuracy'],label='accuracy');acc_ax.plot(hist.history['val_accuracy'],label='val_accuracy')
         acc_ax.set_ylabel('Accuracy')
         plt.grid(); plt.title('Learning Process of Auto-Encoder')
         plt.savefig('Learning Process of Auto-Encoder.jpg')
         self.auto_encoder.save_weights(checkpoint_path)
         print('Save model weights')
-        if hist.history['acc'][1][-1] > 0.9:    
+        if hist.history['accuracy'][-1] > 0.9:    
             print('Accuracy of Auto-Encoder is {:.2f}, over 90\%'.format(hist.history['acc'][1][-1]*100.0))
             self.is_fit = True
         return
@@ -372,7 +376,7 @@ if __name__ == "__main__":
                     # "DONE_FUNC":done_function,\
                 },\
             "BATCH_SIZE":32,\
-            "TRAIN_START":2000,\
+            "TRAIN_START":500,\
             "MEMORY_SIZE":100000,\
             }
     env_config = env_configs[cfg["ENV"]]
