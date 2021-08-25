@@ -1,7 +1,7 @@
 # Find RL_Note path and append sys path
 import os, sys
 cwd = os.getcwd()
-dir_name = 'RL_note'
+dir_name = 'RL_Note'
 pos = cwd.find(dir_name)
 root_path = cwd[0:pos] + dir_name
 sys.path.append(root_path)
@@ -20,7 +20,6 @@ from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Input, Dense, Reshape, LeakyReLU, ReLU
 from tensorflow.keras.layers import Flatten, Dropout, BatchNormalization
 from tensorflow.keras.layers import MaxPool2D, UpSampling2D, Conv2D, Conv2DTranspose
-from tensorflow_addons.layers import MaxUnpooling2D
 from tensorflow.keras.activations import tanh as Tanh
 from tensorflow.keras.losses import MeanSquaredError, BinaryCrossentropy
 from tensorflow.keras.optimizers import Adam, RMSprop
@@ -155,6 +154,8 @@ class DQNAgent:
         self.train_period_ae = 1000
         self.batch_size_ae = 1000
         self.do_train_ae = False
+        self.is_fit = False
+        self.hist = None
         # self.image_cols = self.state_size[1]
         # self.image_rows = self.state_size[2]
 
@@ -168,7 +169,6 @@ class DQNAgent:
         self.show_media_info = False
         self.steps = 0
         self.update_period = 100
-        # self.interaction_period = 1
 
         print(self.filename)
         print('States {0}, Actions {1}'.format(self.state_size, self.action_size))
@@ -271,36 +271,59 @@ class DQNAgent:
 
         return loss
 
-    def step_update(self):
+    def train_auto_encoder(self):
+        if self.is_fit:
+            return
+        print('***** Train Auto-Encoder *****')
+        # Sampling from the memory
+        if self.er_type == "ER" or self.er_type == "HER":
+            mini_batch = self.memory.sample(self.batch_size_ae)
+        elif self.er_type == "PER":
+            mini_batch, idxs, is_weights = self.memory.sample(self.batch_size_ae)
+        x_train = tf.convert_to_tensor(np.array([sample[0] for sample in mini_batch]))
+        # print('x_train shape : ',np.shape(x_train))
+        checkpoint_path = 'cartpole_auto_encoder.ckpt'
+        # Train
+        checkpoint = ModelCheckpoint(checkpoint_path, 
+                                    save_best_only=True, 
+                                    save_weights_only=True, 
+                                    monitor='loss', 
+                                    verbose=1)
+        hist = self.auto_encoder.fit(x_train, x_train, 
+                                    # batch_size=self.batch_size_ae, 
+                                    epochs=20, 
+                                    callbacks=[checkpoint], 
+                                    validation_split=0.1,
+                                    verbose=1
+                                    )
+        plt.figure(2)
+        loss_ax = plt.subplots()
+        acc_ax = loss_ax.twinx()
+        loss_ax.plot(hist.history['loss'],label='loss'); loss_ax.plot(hist.history['val_loss'],label='loss_val');
+        loss_ax.set_xlabel('episode'); loss_ax.set_ylabel('loss')
+        acc_ax.plot(hist.history['accuracy'],label='acc');acc_ax.plot(hist.history['val_accuracy'],label='acc_val');
+        acc_ax.set_ylabel('Accuracy')
+        plt.grid(); plt.title('Learning Process of Auto-Encoder')
+        plt.savefig('Learning Process of Auto-Encoder.jpg')
+        self.auto_encoder.save_weights(checkpoint_path)
+        print('Save model weights')
+        if hist.history['acc'][1][-1] > 0.9:    
+            print('Accuracy of Auto-Encoder is {:.2f}, over 90\%'.format(hist.history['acc'][1][-1]*100.0))
+            self.is_fit = True
+        return
+
+    def step_update(self, done:bool = False):
         if self.steps % self.update_period == 0:
             self.soft_update_target_model()
+
+        if done == True:
+            self.episode_update()
         return
 
     def episode_update(self):
         if self.do_train_ae == True:
             self.do_train_ae = False
-            print('***** Train Auto-Encoder *****')
-            # Sampling from the memory
-            if self.er_type == "ER" or self.er_type == "HER":
-                mini_batch = self.memory.sample(self.batch_size_ae)
-            elif self.er_type == "PER":
-                mini_batch, idxs, is_weights = self.memory.sample(self.batch_size_ae)
-            x_train = tf.convert_to_tensor(np.array([sample[0] for sample in mini_batch]))
-            # print('x_train shape : ',np.shape(x_train))
-            checkpoint_path = 'cartpole_auto_encoder.ckpt'
-            # Train
-            checkpoint = ModelCheckpoint(checkpoint_path, 
-                                        save_best_only=True, 
-                                        save_weights_only=True, 
-                                        monitor='loss', 
-                                        verbose=1)
-            self.auto_encoder.fit(x_train, x_train, 
-                            batch_size=self.batch_size_ae, 
-                            epochs=20, 
-                            callbacks=[checkpoint], 
-                            )
-            self.auto_encoder.save_weights(checkpoint_path)
-            print('Save model weights')
+            self.train_auto_encoder()
         return
 
     def load_model(self,at:str):
@@ -388,7 +411,7 @@ if __name__ == "__main__":
             next_state = get_image(env.render(mode='rgb_array'))
             agent.remember(state, action, reward, next_state, done, goal)
             loss = agent.train_model()
-            agent.step_update()
+            agent.step_update(done)
             state = next_state
             # 
             score += reward
@@ -402,7 +425,6 @@ if __name__ == "__main__":
                 print("---------------------------------------------")
                 show_media_info = False
             if done:
-                agent.episode_update()
                 score_avg = 0.9 * score_avg + 0.1 * score if score_avg != 0 else score
                 print("episode: {0:3d} | score avg: {1:3.2f} | mem size {2:6d} |"
                     .format(e, score_avg, len(agent.memory)))
