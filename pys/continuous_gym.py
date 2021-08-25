@@ -65,10 +65,10 @@ if __name__ == "__main__":
         "MEMORY_SIZE":50000,\
         }
         env_config = env_configs[cfg["ENV"]]
+        FILENAME = cfg["ENV"] + '_' + cfg["RL"]["ALGORITHM"] + '_' + cfg["ER"]["ALGORITHM"]
         if cfg["ER"]["ALGORITHM"] == "HER":
-            FILENAME = cfg["ENV"] + '_' + cfg["RL"]["ALGORITHM"] + '_' + cfg["ER"]["ALGORITHM"] + '_' + cfg["HER"]["STRATEGY"]
-        else:
-            FILENAME = cfg["ENV"] + '_' + cfg["RL"]["ALGORITHM"] + '_' + cfg["ER"]["ALGORITHM"]
+            FILENAME = FILENAME + '_' + cfg["ER"]["STRATEGY"]
+        FILENAME = FILENAME + '_' + cfg["ADD_NAME"]
         EPISODES = env_config["EPISODES"]
         END_SCORE = env_config["END_SCORE"]
         plt.clf()
@@ -103,6 +103,7 @@ if __name__ == "__main__":
                 next_state, reward, done, info = env.step(action)
                 agent.remember(state, action, reward, next_state, done, goal)
                 critic_loss, actor_loss = agent.train_model()
+                agent.update_network(done)
                 state = next_state
                 # 
                 score += reward

@@ -18,7 +18,10 @@ class DDPGAgent:
         self.env_name   = cfg["ENV"]
         self.rl_type    = "DDPG"
         self.er_type    = cfg["ER"]["ALGORITHM"].upper()
-        self.filename   = cfg["ENV"] + '_' + cfg["RL"]["ALGORITHM"] + '_' + cfg["ER"]["ALGORITHM"]
+        self.filename = cfg["ENV"] + '_' + cfg["RL"]["ALGORITHM"] + '_' + cfg["ER"]["ALGORITHM"]
+        if cfg["ER"]["ALGORITHM"] == "HER":
+            self.filename = self.filename + '_' + cfg["ER"]["STRATEGY"]
+        self.filename = self.filename + '_' + cfg["ADD_NAME"]
 
         # Experience Replay
         self.batch_size = cfg["BATCH_SIZE"]
@@ -35,7 +38,6 @@ class DDPGAgent:
                 replay_strategy     = cfg["ER"]["STRATEGY"],\
                 reward_func         = cfg["ER"]["REWARD_FUNC"],\
                 done_func           = cfg["ER"]["DONE_FUNC"])
-            self.filename = cfg["ENV"] + '_' + cfg["RL"]["ALGORITHM"] + '_' + cfg["ER"]["ALGORITHM"] + '_' + cfg["ER"]["STRATEGY"]
 
         # Hyper params for learning
         self.discount_factor = 0.99
@@ -68,6 +70,8 @@ class DDPGAgent:
         self.ou_noise = OUActionNoise(mean=np.zeros(1), std_deviation=float(self.noise_std_dev) * np.ones(1))
 
         # Miscellaneous
+        self.update_freq = 1
+        self.train_idx = 0
         self.show_media_info = False
 
         print(self.filename)
@@ -104,17 +108,17 @@ class DDPGAgent:
 
     def get_action(self,state):
         state = tf.convert_to_tensor([state], dtype=tf.float32)
-        action = self.actor(state)
+        action = self.actor(state).numpy()[0]
+        noise = self.ou_noise()
         # Exploration and Exploitation
-        action_from_net = action.numpy()[0]
-        action_from_noise = self.ou_noise()
-        return np.clip(action_from_net+action_from_noise,self.action_min,self.action_max)
+        return np.clip(action+noise,self.action_min,self.action_max)
 
     def train_model(self):
         # Train from Experience Replay
         # Training Condition - Memory Size
         if len(self.memory) < self.train_start:
             return 0.0,0.0
+        self.train_idx = self.train_idx + 1
         # Sampling from the memory
         if self.er_type == "ER" or self.er_type == "HER":
             mini_batch = self.memory.sample(self.batch_size)
@@ -141,12 +145,13 @@ class DDPGAgent:
                 print('**** shape of goals', np.shape(goals),type(goals))
 
         # Update critic
+        target_actions = self.target_actor(next_states,training=True)
+        target_q = self.target_critic([next_states,target_actions],training=True)
+        target_value = rewards + (1 - dones) * self.discount_factor * target_q
+
         with tf.GradientTape() as tape:
-            target_actions = self.target_actor(next_states,training=True)
-            target_q = self.target_critic([next_states,target_actions],training=True)
-            target_value = rewards + (1 - dones) * self.discount_factor * target_q
             q = self.critic([states, actions],training=True)
-            td_error = target_value - q
+            td_error = tf.abs(target_value - q)
             if self.er_type == "ER" or self.er_type == "HER":
                 critic_loss = tf.math.reduce_mean(tf.math.square(target_value - q))
             elif self.er_type == "PER":
@@ -171,8 +176,12 @@ class DDPGAgent:
             for i in range(self.batch_size):
                 self.memory.update(idxs[i], sample_importance[i])
 
-        self.soft_update_target_model()
         return critic_loss_out, actor_loss_out
+
+    def update_network(self,done=False):
+        if self.train_idx % self.update_freq == 0:
+            self.soft_update_target_model()
+        return
 
     def load_model(self,at):
         self.actor.load_weights( at + self.filename + "_TF_actor")

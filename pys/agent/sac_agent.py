@@ -22,7 +22,10 @@ class SACAgent:
         self.env_name   = cfg["ENV"]
         self.rl_type    = "SAC"
         self.er_type    = cfg["ER"]["ALGORITHM"].upper()
-        self.filename   = cfg["ENV"] + '_' + cfg["RL"]["ALGORITHM"] + '_' + cfg["ER"]["ALGORITHM"]
+        self.filename = cfg["ENV"] + '_' + cfg["RL"]["ALGORITHM"] + '_' + cfg["ER"]["ALGORITHM"]
+        if cfg["ER"]["ALGORITHM"] == "HER":
+            self.filename = self.filename + '_' + cfg["ER"]["STRATEGY"]
+        self.filename = self.filename + '_' + cfg["ADD_NAME"]
 
         # Experience Replay
         self.batch_size = cfg["BATCH_SIZE"]
@@ -39,7 +42,6 @@ class SACAgent:
                 replay_strategy     = cfg["ER"]["STRATEGY"],\
                 reward_func         = cfg["ER"]["REWARD_FUNC"],\
                 done_func           = cfg["ER"]["DONE_FUNC"])
-            self.filename = cfg["ENV"] + '_' + cfg["RL"]["ALGORITHM"] + '_' + cfg["ER"]["ALGORITHM"] + '_' + cfg["ER"]["STRATEGY"]
 
         # Hyper params for learning
         self.discount_factor = 0.99
@@ -81,6 +83,8 @@ class SACAgent:
         self.hard_update_target_model()
 
         # Miscellaneous
+        self.update_freq = 1
+        self.train_idx = 0
         self.show_media_info = False
 
         print(self.filename)
@@ -138,6 +142,7 @@ class SACAgent:
         # Training Condition - Memory Size
         if len(self.memory) < self.train_start:
             return 0.0,0.0
+        self.train_idx = self.train_idx + 1
         # Sampling from the memory
         if self.er_type == "ER" or self.er_type == "HER":
             mini_batch = self.memory.sample(self.batch_size)
@@ -214,9 +219,13 @@ class SACAgent:
             for i in range(self.batch_size):
                 self.memory.update(idxs[i], sample_importance[i])
 
-        self.soft_update_target_model()
         critic_loss_out = 0.5*(critic1_loss.numpy() + critic2_loss.numpy())
         return critic_loss_out, actor_loss_out
+
+    def update_network(self,done=False):
+        if self.train_idx % self.update_freq == 0:
+            self.soft_update_target_model()
+        return
         
     def load_model(self,at):
         self.actor.load_weights(  at + self.filename + "_TF_actor")
