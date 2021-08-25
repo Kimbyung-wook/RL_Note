@@ -164,8 +164,8 @@ class DQNAgent:
         # Auto Encoder
         self.compressed_shape = (4,)
         self.auto_encoder, self.encoder, self.decoder = AutoEncoder(self.state_size, self.compressed_shape)
-        self.train_period_ae = 500
-        self.batch_size_ae = 500
+        self.train_period_ae = 1000
+        self.batch_size_ae = 1000
         self.do_train_ae = False
         self.is_fit = True
         self.hist = None
@@ -333,12 +333,14 @@ class DQNAgent:
         loss_ax.set_xlabel('episode'); loss_ax.set_ylabel('loss')
         acc_ax.plot(hist.history['accuracy'],label='accuracy');acc_ax.plot(hist.history['val_accuracy'],label='val_accuracy')
         acc_ax.set_ylabel('Accuracy')
+        plt.legend()
         plt.grid(); plt.title('Learning Process of Auto-Encoder')
         plt.savefig('Learning Process of Auto-Encoder.jpg')
         self.auto_encoder.save_weights(checkpoint_path)
         print('Save model weights')
         if hist.history['accuracy'][-1] > self.fit_criterion:    
-            print('Accuracy of Auto-Encoder is {:.2f}, over 90%'.format(hist.history['accuracy'][-1]*100.0))
+            print('Accuracy of Auto-Encoder is {:.2f} %, over {:.1f} %'\
+                .format(hist.history['accuracy'][-1]*100.0,self.fit_criterion*100.0))
             self.is_fit = True
         return
 
@@ -390,7 +392,7 @@ if __name__ == "__main__":
             "RL":{
                 "ALGORITHM":"DQN",\
                 "NETWORK":{
-                    "LAYER":[255,255],\
+                    "LAYER":[128,128],\
                 }
             },\
             "ER":
@@ -402,7 +404,7 @@ if __name__ == "__main__":
                     # "DONE_FUNC":done_function,\
                 },\
             "BATCH_SIZE":32,\
-            "TRAIN_START":500,\
+            "TRAIN_START":2000,\
             "MEMORY_SIZE":100000,\
             }
     env_config = env_configs[cfg["ENV"]]
@@ -477,7 +479,7 @@ if __name__ == "__main__":
                 plt.subplot(313)
                 plt.plot(episodes, losses, 'b')
                 plt.xlabel('episode'); plt.ylabel('losses') ;plt.grid()
-                plt.savefig(workspace_path + "\\result\\img\\" + FILENAME + "_TF.jpg", dpi=100)
+                plt.savefig(FILENAME + "_TF.jpg", dpi=100)
 
                 # 이동 평균이 0 이상일 때 종료
                 if score_avg > END_SCORE:

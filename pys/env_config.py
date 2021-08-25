@@ -1,7 +1,7 @@
 env_configs = {
     # Discrete Action Env
     'CartPole-v1':{
-        'EPISODES':2000,
+        'EPISODES':3000,
         'END_SCORE':400
     },
     'LunarLander-v2':{
