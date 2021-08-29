@@ -368,16 +368,6 @@ class DQNAgent:
         self.target_model.save_weights(at + self.filename + "_TF", save_format="tf")
         return
 
-    # def get_image(env:object):
-    #     img = env.render(mode='rgb_array')
-        
-    #     img_rgb = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-    #     img_rgb_resize = cv2.resize(img_rgb, (self.image_rows,self.image_cols), interpolation=cv2.INTER_CUBIC)
-    #     img_k_resize = cv2.cvtColor(img_rgb_resize,cv2.COLOR_RGB2GRAY)
-        
-        # return np.expand_dims(img_k_resize, axis=0)
-        return img_k_resize
-
 def get_image(img_rgb):
     img_rgb_resize = cv2.resize(img_rgb, (img_size[0],img_size[1]), interpolation=cv2.INTER_CUBIC)
     img_k_resize = cv2.cvtColor(img_rgb_resize,cv2.COLOR_RGB2GRAY)

@@ -1,7 +1,7 @@
 # Find RL_Note path and append sys path
 import os, sys
 cwd = os.getcwd()
-dir_name = 'RL_note'
+dir_name = 'RL_Note'
 pos = cwd.find(dir_name)
 root_path = cwd[0:pos] + dir_name
 sys.path.append(root_path)
@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 from env_config  import env_configs
 from pys.agent.dqn_agent import DQNAgent
 from pys.agent.mdqn_agent import MDQNAgent
+from utils.img_saver import ImgSaver
 
 from pys.gyms.functions import mountain_car_done as done_function
 from pys.gyms.functions import mountain_car_reward as reward_function
@@ -31,7 +32,7 @@ if gpus:
 #             ('DDPG','ER'),('DDPG','PER'),('DDPG','HER'),\
 #         )
 lists = (
-            # ('DQN','ER'),\
+            ('DQN','ER'),\
             # ('DQN','PER'),\
             # ('DQN','HER'),\
             # ('MDQN','ER'),\
@@ -43,15 +44,15 @@ if __name__ == "__main__":
     for item in lists:
         cfg = {\
                 # "ENV":"Pong-v0",\
-                # "ENV":"CartPole-v1",\
-                "ENV":"MountainCar-v0",\
+                "ENV":"CartPole-v1",\
+                # "ENV":"MountainCar-v0",\
                 "RL":{
                     "ALGORITHM":item[0],\
                     "TYPE":None,\
                     # "TYPE":'DOUBLE',\ # DQN
                     # "TYPE":'DEULING',\ # DQN
                     "NETWORK":{
-                        "LAYER":[128,128],\
+                        "LAYER":[64,64],\
                     }
                 },\
                 "ER":
@@ -93,6 +94,7 @@ if __name__ == "__main__":
         end = False
         show_media_info = True
         goal = (0.5,0.0)
+        img_saver = ImgSaver((128,96),cfg['ENV']+'_img.npy')
         
         for e in range(EPISODES):
             # Episode initialization
@@ -102,7 +104,7 @@ if __name__ == "__main__":
             state = env.reset()
             while not done:
                 # if e % 100 == 0:
-                #     env.render()
+                img = img_saver.get_image_to_gray(env.render(mode='rgb_array'))
                 # Interact with env.
                 action = agent.get_action(state)
                 next_state, reward, done, info = env.step(action)
@@ -148,14 +150,16 @@ if __name__ == "__main__":
 
                     # 이동 평균이 0 이상일 때 종료
                     if score_avg > END_SCORE:
-                        agent.save_model(workspace_path + "\\result\\save_model\\")
+                        # agent.save_model(workspace_path + "\\result\\save_model\\")
                         end = True
                         break
             if end == True:
                 env.close()
-                np.save(workspace_path + "\\result\\data\\" + FILENAME + "_TF_epi",  episodes)
-                np.save(workspace_path + "\\result\\data\\" + FILENAME + "_TF_scores_avg",scores_avg)
-                np.save(workspace_path + "\\result\\data\\" + FILENAME + "_TF_scores_raw",scores_raw)
-                np.save(workspace_path + "\\result\\data\\" + FILENAME + "_TF_losses",losses)
+                img_saver.save_data()
+                # np.save(workspace_path + "\\result\\data\\" + FILENAME + "_TF_epi",  episodes)
+                # np.save(workspace_path + "\\result\\data\\" + FILENAME + "_TF_scores_avg",scores_avg)
+                # np.save(workspace_path + "\\result\\data\\" + FILENAME + "_TF_scores_raw",scores_raw)
+                # np.save(workspace_path + "\\result\\data\\" + FILENAME + "_TF_losses",losses)
                 print("End")
+                # img_saver.save_data(cfg['cfg']['ENV']+'_img.npy')
                 break

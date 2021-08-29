@@ -1,5 +1,4 @@
 import random
-from typing_extensions import Concatenate
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.layers import Input
@@ -139,7 +138,7 @@ class DQNAgent:
         model_params = self.q_net.trainable_variables
         with tf.GradientTape() as tape:
             # get q value
-            q = self.q_net(states) + self.a_net(Concatenate([states, actions],axis=1))
+            q = self.q_net(states)
             one_hot_action = tf.one_hot(actions, self.action_size)
             q = tf.reduce_sum(one_hot_action * q, axis=1)
             q = tf.expand_dims(q,axis=1)
