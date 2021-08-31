@@ -183,7 +183,7 @@ class MDQNAgent:
 
         return loss
 
-    def update_network(self,done = False):
+    def update_model(self,done = False):
         # if self.steps % self.update_period != 0:
         #     self.soft_update_target_model()
         if done == True:

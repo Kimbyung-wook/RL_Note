@@ -31,6 +31,9 @@ class BaseAgent:
                 done_func           = cfg["HER"]["DONE_FUNC"])
             self.filename = cfg["ENV"] + '_' + cfg["RL"]["ALGORITHM"] + '_' + cfg["ER"] + '_' + cfg["HER"]["STRATEGY"]
 
+    def get_action(self,state):
+        NotImplementedError
+
     def remember(self, state, action, reward, next_state, done, goal=None):
         state       = np.array(state,       dtype=np.float32)
         action      = np.array(action,      dtype=np.float32)
@@ -45,9 +48,9 @@ class BaseAgent:
         self.memory.append(transition)
         return
 
-    def get_action(self,state):
+    def train_model(self):
         NotImplementedError
-
+ 
     def hard_update_target_model(self):
         NotImplementedError
 
@@ -57,18 +60,6 @@ class BaseAgent:
         '''
         NotImplementedError
 
-    def train_model(self):
-        '''
-        Train model
-        '''
-        NotImplementedError
-
-    def update_model(self):
-        '''
-        Update Target model
-        '''
-        NotImplementedError
-        
     def load_model(self,at):
         '''
         Load pre-trained model

@@ -83,7 +83,7 @@ if __name__ == "__main__":
       observe, reward, done, info = env.step(action=action)
       next_feature = featurization.preprocessing(observe)
       agent.remember(feature, action, reward, next_feature, done)
-      loss = agent.train()
+      loss = agent.train_model()
       agent.update_target_net()
 
       episode_score += reward

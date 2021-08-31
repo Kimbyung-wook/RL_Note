@@ -163,8 +163,8 @@ class DQNAgent:
 
         return loss
 
-    def update_mode(self,done=False):
-        if done == True:
+    def update_model(self,done=False):
+       if done == True:
             self.hard_update_target_model()
         # if self.steps % self.update_period != 0:
         #     self.soft_update_target_model()

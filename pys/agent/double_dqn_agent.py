@@ -160,7 +160,7 @@ class DDQNAgent:
 
         return loss
 
-    def update_network(self,done=False):
+    def update_model(self,done=False):
         if done == True:
             self.hard_update_target_model()
         # if self.steps % self.update_period != 0:
