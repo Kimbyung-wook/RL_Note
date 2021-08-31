@@ -1,5 +1,6 @@
 # https://keras.io/examples/rl/deep_q_network_breakout/
 # https://github.com/rlcode/reinforcement-learning-kr/blob/master/3-atari/1-breakout/breakout_dqn.py
+# https://colab.research.google.com/github/GiannisMitr/DQN-Atari-Breakout/blob/master/dqn_atari_breakout.ipynb
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' 
 import gym, random, time

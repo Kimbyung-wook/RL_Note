@@ -1,7 +1,7 @@
 import numpy as np
-from pys.utils.er import ReplayMemory
-from pys.utils.per import ProportionalPrioritizedMemory
-from pys.utils.her import HindsightMemory
+from pys.utils.ER import ReplayMemory
+from pys.utils.PER import ProportionalPrioritizedMemory
+from pys.utils.HER import HindsightMemory
 
 class BaseAgent:
     def __init__(self, env:object, cfg:dict):
