@@ -55,28 +55,25 @@ class DQNAgent:
         # Neural Network Architecture
         self.optimizer = tf.keras.optimizers.Adam(learning_rate=self.learning_rate)
         if self.env_cfg['STATE_TYPE'] == "MLP":
+            print('Neural Network Model is MLP')
             self.q_net        = MLPNetwork(self.state_size, self.action_size, self.rl_cfg["NETWORK"])
             self.target_q_net = MLPNetwork(self.state_size, self.action_size, self.rl_cfg["NETWORK"])
-            # state_in = Input(self.state_size)
-            # self.q_net.build(input_shape=(None,self.state_size[0]))
+            # self.q_net.build(input_shape=(None,4))
+            # self.target_q_net.build(input_shape=(None, 4))
+            # state_in = Input((4,))
             # self.q_net(state_in)
-            # self.target_q_net.build(input_shape=(None,self.state_size[0]))
             # self.target_q_net(state_in)
-        elif self.env_cfg['STATE_TYPE']:
+        elif self.env_cfg['STATE_TYPE'] == 'IMG':
+            print('Neural Network Model is MLP with CNN')
             self.q_net        = CNNNetwork(self.state_size, self.action_size, self.rl_cfg["NETWORK"])
             self.target_q_net = CNNNetwork(self.state_size, self.action_size, self.rl_cfg["NETWORK"])
-            # state_in = Input(self.state_size)
-            # self.q_net.build(input_shape=(None,self.state_size[0],self.state_size[1]))
-            # self.q_net(state_in)
-            # self.target_q_net.build(input_shape=(None,self.state_size[0],self.state_size[1]))
-            # self.target_q_net(state_in)
-        
-        # self.q_net.summary()
+            self.q_net.summary()
         # self.target_q_net.summary()
         self.hard_update_target_model()
         
         # Miscellaneous
         self.image_size = self.env_cfg["IMG_SIZE"]
+        self.image_crop = self.env_cfg['IMG_CROP']
         self.show_media_info = False
         self.steps = 0
         self.update_period = 10

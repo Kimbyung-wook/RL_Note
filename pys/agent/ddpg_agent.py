@@ -61,8 +61,8 @@ class DDPGAgent:
         self.target_actor(state_in)
         self.critic([state_in, action_in])
         self.target_critic([state_in, action_in])
-        # self.actor.summary()
-        # self.critic.summary()
+        self.actor.summary()
+        self.critic.summary()
         self.hard_update_target_model()
 
         # Noise

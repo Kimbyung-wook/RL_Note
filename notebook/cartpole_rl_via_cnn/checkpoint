@@ -1,2 +1,2 @@
-model_checkpoint_path: "CartPole-v1_DQN_ER_MLP_TF"
-all_model_checkpoint_paths: "CartPole-v1_DQN_ER_MLP_TF"
+model_checkpoint_path: "CartPole-v1_DQN_PER_MLP_TF"
+all_model_checkpoint_paths: "CartPole-v1_DQN_PER_MLP_TF"

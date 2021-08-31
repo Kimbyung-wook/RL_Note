@@ -2,56 +2,93 @@
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' 
 
+import random
 import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
 from dqn_agent import DQNAgent
 from env_config import env_configs
 from gym_wrapper import GymWrapper
+from utils import ImageFeaturization
 
 gpus = tf.config.experimental.list_physical_devices('GPU')
 if gpus:
   try:
-    tf.config.experimental.set_virtual_device_configuration(gpus[0], [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=1024)])
+    tf.config.experimental.set_virtual_device_configuration(\
+        gpus[0], [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=1024*3)])
   except RuntimeError as e:
     print(e)
-
 lists = (
-            ('DQN','ER'),\
+            # (2,'ER'),\
+            # (3,'ER'),\
+            # (4,'ER'),\
+            # (5,'ER'),\
+            # (6,'ER'),\
+            # (8,'ER'),\
+            (2,'PER'),\
+            (3,'PER'),\
+            (4,'PER'),\
+            (5,'PER'),\
+            (6,'PER'),\
+            (8,'PER'),\
         )
 print('Batch list : ',lists)
 
+scores_avg, scores_raw, episodes, losses, epsilons = [], [], [], [], []
+def save_statistics():
+    # View data
+    plt.clf()
+    plt.subplot(311)
+    plt.plot(scores_avg, 'b')
+    plt.plot(scores_raw, 'b', alpha=0.8, linewidth=0.5)
+    plt.xlabel('Episodes'); plt.ylabel('average score'); plt.grid()
+    plt.title(FILENAME)
+    plt.subplot(312)
+    plt.plot(epsilons, 'b')
+    plt.xlabel('Episodes'); plt.ylabel('epsilon'); plt.grid()
+    plt.subplot(313)
+    plt.plot(losses, 'b')
+    plt.xlabel('Episodes'); plt.ylabel('losses') ;plt.grid()
+    plt.savefig(FILENAME + "_TF.jpg", dpi=100)
+
 if __name__ == "__main__":
     for item in lists:
+        STATE_TYPE = 'IMG'
+        # STATE_TYPE = 'MLP'
         cfg = {\
                 "ENV":{
                     "NAME":"CartPole-v1",
-                    "IMG_SIZE":(128,96),
-                    "STATE_TYPE":"IMG",
+                    # "IMG_SIZE":(240,160,4),
+                    "IMG_SIZE":(120,40,item[0]),
+                    "IMG_CROP":((150,350),(0,-1)),
+                    "STATE_TYPE":STATE_TYPE,
+                    "IMG_TYPE":"GRAY",
+                    # "IMG_TYPE":"RGB",
                     },
                 "RL":{
                     "ALGORITHM":'DQN',
-                    "STATE_TYPE":"IMG",
+                    "STATE_TYPE":STATE_TYPE,
                     "NETWORK":{
                         "LAYER":[128,128],
                     },
                     "ER":
                         {
-                            "ALGORITHM":'ER',
+                            "ALGORITHM":item[1],
                         },
-                    "BATCH_SIZE":64,
-                    "TRAIN_START":500,
-                    "MEMORY_SIZE":20000,
-                    "ADD_NAME":"",
+                    "BATCH_SIZE":256,
+                    "TRAIN_START":2000,
+                    "MEMORY_SIZE":50000,
                     },
+                "ADD_NAME":STATE_TYPE+str(item[0]),
+                # "ADD_NAME":STATE_TYPE,
                 }
         env_config = env_configs[cfg["ENV"]["NAME"]]
         FILENAME = cfg["ENV"]["NAME"] + '_' + cfg["RL"]["ALGORITHM"] + '_' + cfg["RL"]["ER"]["ALGORITHM"]
-        if cfg["ER"]["ALGORITHM"] == "HER":
+        if cfg['RL']["ER"]["ALGORITHM"] == "HER":
             FILENAME = FILENAME + '_' + cfg["ER"]["STRATEGY"]
-        FILENAME = FILENAME + '_' + cfg["RL"]["ADD_NAME"]
-        EPISODES = env_config["ENV"]["EPISODES"]
-        END_SCORE = env_config["ENV"]["END_SCORE"]
+        FILENAME = FILENAME + '_' + cfg["ADD_NAME"]
+        EPISODES = env_config["EPISODES"]
+        END_SCORE = env_config["END_SCORE"]
 
         env = GymWrapper(cfg=cfg['ENV'])
 
@@ -59,17 +96,17 @@ if __name__ == "__main__":
             agent = DQNAgent(env, cfg)
         # elif cfg["RL"]["ALGORITHM"] == "MDQN":
         #     agent = MDQNAgent(env, cfg)
-        
+        image_featurization = ImageFeaturization(data_format = 'last', img_size=cfg['ENV']['IMG_SIZE'])
         plt.clf()
         figure = plt.gcf()
         figure.set_size_inches(8,6)
 
-        scores_avg, scores_raw, episodes, losses = [], [], [], []
-        epsilons = []
+        save_freq = 10; global_steps = 0
         score_avg = 0
         end = False
         show_media_info = True
         goal = (0.5,0.0)
+        is_enough = True
         
         for e in range(EPISODES):
             # Episode initialization
@@ -77,11 +114,18 @@ if __name__ == "__main__":
             score = 0
             loss_list = []
             state = env.reset()
+            if cfg['ENV']['STATE_TYPE'] == 'IMG':
+                state, is_enough = image_featurization(state)
             while not done:
+                # env.render()
                 # Interact with env.
-                # action = agent.get_action(state)
-                action = random.randrange(env.action_space.n)
+                if is_enough == False:
+                    action = random.randrange(env.env.action_space.n)
+                else:
+                    action = agent.get_action(state)
                 next_state, reward, done, info = env.step(action)
+                if cfg['ENV']['STATE_TYPE'] == 'IMG':
+                    next_state, is_enough = image_featurization(next_state)
                 agent.remember(state, action, reward, next_state, done, goal)
                 loss = agent.train_model()
                 agent.update_network(done)
@@ -89,6 +133,8 @@ if __name__ == "__main__":
                 # 
                 score += reward
                 loss_list.append(loss)
+                global_steps+=1
+                # break
                 if show_media_info:
                     print("-------------- Variable shapes --------------")
                     print("State Shape : ", np.shape(state))
@@ -96,42 +142,32 @@ if __name__ == "__main__":
                     print("Reward Shape : ", np.shape(reward))
                     print("done Shape : ", np.shape(done))
                     print("---------------------------------------------")
+                    if cfg['ENV']['STATE_TYPE'] == "IMG":
+                        # print(np.shape(state))
+                        # print(np.shape(state[:,:,0]))
+                        # plt.imshow(np.squeeze(state,axis=2),cmap='gray')
+                        plt.imshow(state[:,:,0],cmap='gray')
+                        # plt.imshow(state)
                     show_media_info = False
-                if done:
+                if done == True:
                     score_avg = 0.9 * score_avg + 0.1 * score if score_avg != 0 else score
                     print("episode: {0:3d} | score avg: {1:3.2f} | mem size {2:6d} |"
                         .format(e, score_avg, len(agent.memory)))
 
-                    episodes.append(e)
+                    # episodes.append(e)
                     scores_avg.append(score_avg)
                     scores_raw.append(score)
                     losses.append(np.mean(loss_list))
                     epsilons.append(agent.epsilon)
-                    # View data
-                    plt.clf()
-                    plt.subplot(311)
-                    plt.plot(episodes, scores_avg, 'b')
-                    plt.plot(episodes, scores_raw, 'b', alpha=0.8, linewidth=0.5)
-                    plt.xlabel('episode'); plt.ylabel('average score'); plt.grid()
-                    plt.title(FILENAME)
-                    plt.subplot(312)
-                    plt.plot(episodes, epsilons, 'b')
-                    plt.xlabel('episode'); plt.ylabel('epsilon'); plt.grid()
-                    plt.subplot(313)
-                    plt.plot(episodes, losses, 'b')
-                    plt.xlabel('episode'); plt.ylabel('losses') ;plt.grid()
-                    plt.savefig(workspace_path + "\\result\\img\\" + FILENAME + "_TF.jpg", dpi=100)
-
+                    if e % save_freq == 0:
+                        save_statistics()
                     # 이동 평균이 0 이상일 때 종료
                     if score_avg > END_SCORE:
-                        # agent.save_model(workspace_path + "\\result\\save_model\\")
+                        agent.save_model("")
+                        save_statistics()
                         end = True
                         break
             if end == True:
                 env.close()
-                # np.save(workspace_path + "\\result\\data\\" + FILENAME + "_TF_epi",  episodes)
-                # np.save(workspace_path + "\\result\\data\\" + FILENAME + "_TF_scores_avg",scores_avg)
-                # np.save(workspace_path + "\\result\\data\\" + FILENAME + "_TF_scores_raw",scores_raw)
-                # np.save(workspace_path + "\\result\\data\\" + FILENAME + "_TF_losses",losses)
                 print("End")
                 break

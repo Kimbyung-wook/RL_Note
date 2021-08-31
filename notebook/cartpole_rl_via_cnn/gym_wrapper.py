@@ -7,6 +7,7 @@ class GymWrapper():
     def __init__(self,cfg):
         self.env_name   = cfg['NAME']
         self.img_size   = cfg['IMG_SIZE']
+        self.img_crop   = cfg['IMG_CROP']
         self.state_type = cfg["STATE_TYPE"]
         self.img_type   = cfg['IMG_TYPE']
         self.env = gym.make(self.env_name)
@@ -43,8 +44,12 @@ class GymWrapper():
         return
         
     def _preprocessing_img(self, raw_img):
-        # img_rbg_crop = raw_img[160:320,:,:]
-        img_rgb_resize = cv2.resize(raw_img, self.img_size[0:2], interpolation=cv2.INTER_CUBIC)
+        # print(np.shape(raw_img))
+        img_rgb_crip = raw_img[self.img_crop[0][0]:self.img_crop[0][1],self.img_crop[1][0]:self.img_crop[1][1],:]
+        # print(np.shape(img_rgb_crip))
+        img_rgb_resize = cv2.resize(img_rgb_crip, self.img_size[0:2], interpolation=cv2.INTER_CUBIC)
+        img_rgb_resize = np.transpose(img_rgb_resize,axes=(1,0,2))
+        # print(np.shape(img_rgb_resize))
         if self.img_type == 'GRAY':
             img_k_resize = cv2.cvtColor(img_rgb_resize,cv2.COLOR_RGB2GRAY)
             img_k_resize = img_k_resize / 255.0 # scaling 0 ~ 1
