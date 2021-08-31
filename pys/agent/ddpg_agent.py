@@ -4,9 +4,9 @@ import tensorflow as tf
 from tensorflow.keras.layers import Input
 
 from pys.utils.ou_noise import OUActionNoise
-from pys.utils.memory import ReplayMemory
-from pys.utils.prioritized_memory import ProportionalPrioritizedMemory
-from pys.utils.hindsight_memory import HindsightMemory
+from pys.utils.er import ReplayMemory
+from pys.utils.per import ProportionalPrioritizedMemory
+from pys.utils.her import HindsightMemory
 from pys.model.actor_critic_deterministic_continuous import Actor, Critic
 
 class DDPGAgent:

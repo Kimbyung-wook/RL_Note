@@ -3,9 +3,9 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras.layers import Input
 
-from pys.utils.memory import ReplayMemory
-from pys.utils.prioritized_memory import ProportionalPrioritizedMemory
-from pys.utils.hindsight_memory import HindsightMemory
+from pys.utils.er import ReplayMemory
+from pys.utils.per import ProportionalPrioritizedMemory
+from pys.utils.her import HindsightMemory
 from pys.model.q_network import QNetwork
 
 class MDQNAgent:

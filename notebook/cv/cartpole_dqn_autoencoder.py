@@ -26,9 +26,9 @@ from tensorflow.keras.optimizers import Adam, RMSprop
 # from tensorflow.keras.metrics import Accuracy, MeanSquaredError
 from tensorflow.keras.callbacks import ModelCheckpoint
 
-from pys.utils.memory import ReplayMemory
-from pys.utils.prioritized_memory import ProportionalPrioritizedMemory
-from pys.utils.hindsight_memory import HindsightMemory
+from pys.utils.er import ReplayMemory
+from pys.utils.per import ProportionalPrioritizedMemory
+from pys.utils.her import HindsightMemory
 from pys.model.q_network import QNetwork
 from pys.env_config import env_configs
 

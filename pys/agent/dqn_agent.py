@@ -3,9 +3,9 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras.layers import Input
 
-from pys.utils.memory import ReplayMemory
-from pys.utils.prioritized_memory import ProportionalPrioritizedMemory
-from pys.utils.hindsight_memory import HindsightMemory
+from pys.utils.er import ReplayMemory
+from pys.utils.per import ProportionalPrioritizedMemory
+from pys.utils.her import HindsightMemory
 from pys.model.q_network import QNetwork
 
 class DQNAgent:
@@ -85,22 +85,6 @@ class DQNAgent:
         else:
             state = tf.convert_to_tensor([state], dtype=tf.float32)
             return np.argmax(self.q_net(state))
-        
-    def hard_update_target_model(self):
-        self.target_q_net.set_weights(self.q_net.get_weights())
-        if self.rl_type == "DEULING":
-            self.target_a_net.set_weights(self.a_net.get_weights())
-
-    def soft_update_target_model(self):
-        tau = self.tau
-        for (net, target_net) in zip(   self.q_net.trainable_variables,
-                                        self.target_q_net.trainable_variables):
-            target_net.assign(tau * net + (1.0 - tau) * target_net)
-        if self.rl_type == "DEULING":
-            for (net, target_net) in zip(   self.q_net.trainable_variables,
-                                            self.target_q_net.trainable_variables):
-                target_net.assign(tau * net + (1.0 - tau) * target_net)
-
     def train_model(self):
         # Train from Experience Replay
         # Training Condition - Memory Size
@@ -179,3 +163,18 @@ class DQNAgent:
         self.q_net.save_weights( at + self.filename + "_TF", save_format="tf")
         self.target_q_net.save_weights(at + self.filename + "_TF", save_format="tf")
         return
+        
+    def hard_update_target_model(self):
+        self.target_q_net.set_weights(self.q_net.get_weights())
+        if self.rl_type == "DEULING":
+            self.target_a_net.set_weights(self.a_net.get_weights())
+
+    def soft_update_target_model(self):
+        tau = self.tau
+        for (net, target_net) in zip(   self.q_net.trainable_variables,
+                                        self.target_q_net.trainable_variables):
+            target_net.assign(tau * net + (1.0 - tau) * target_net)
+        if self.rl_type == "DEULING":
+            for (net, target_net) in zip(   self.q_net.trainable_variables,
+                                            self.target_q_net.trainable_variables):
+                target_net.assign(tau * net + (1.0 - tau) * target_net)
