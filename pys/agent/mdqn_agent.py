@@ -61,6 +61,15 @@ class MDQNAgent:
         print(self.filename)
         print('States {0}, Actions {1}'.format(self.state_size, self.action_size))
         
+    def get_action(self,state):
+        self.steps += 1
+        # Exploration and Exploitation
+        if (np.random.rand() <= self.epsilon):
+            return random.randrange(self.action_size)
+        else:
+            state = tf.convert_to_tensor([state], dtype=tf.float32)
+            return np.argmax(self.model.predict(state))
+        
     def remember(self, state, action, reward, next_state, done, goal=None):
         state       = np.array(state,       dtype=np.float32)
         action      = np.array([action])
@@ -75,24 +84,6 @@ class MDQNAgent:
             transition  = (state, action, reward, next_state, done)
         self.memory.append(transition)
         return
-        
-    def hard_update_target_model(self):
-        self.target_model.set_weights(self.model.get_weights())
-
-    def soft_update_target_model(self):
-        tau = self.tau
-        for (net, target_net) in zip(   self.model.trainable_variables,
-                                        self.target_model.trainable_variables):
-            target_net.assign(tau * net + (1.0 - tau) * target_net)
-
-    def get_action(self,state):
-        self.steps += 1
-        # Exploration and Exploitation
-        if (np.random.rand() <= self.epsilon):
-            return random.randrange(self.action_size)
-        else:
-            state = tf.convert_to_tensor([state], dtype=tf.float32)
-            return np.argmax(self.model.predict(state))
         
     def train_model(self):
         # Train from Experience Replay
@@ -199,3 +190,12 @@ class MDQNAgent:
         self.model.save_weights( at + self.filename + "_TF", save_format="tf")
         self.target_model.save_weights(at + self.filename + "_TF", save_format="tf")
         return
+
+    def hard_update_target_model(self):
+        self.target_model.set_weights(self.model.get_weights())
+
+    def soft_update_target_model(self):
+        tau = self.tau
+        for (net, target_net) in zip(   self.model.trainable_variables,
+                                        self.target_model.trainable_variables):
+            target_net.assign(tau * net + (1.0 - tau) * target_net)
