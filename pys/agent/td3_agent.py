@@ -85,6 +85,13 @@ class TD3Agent:
         for i in range(self.action_size):
             print(i+1,'th Action space {0:.2f} ~ {1:.2f}'.format(env.action_space.low[i], env.action_space.high[i]))
 
+    def get_action(self,state):
+        state = tf.convert_to_tensor([state], dtype=tf.float32)
+        action = self.actor(state).numpy()[0]
+        noise = np.random.randn(self.action_size)*self.noise_std_dev + self.noise_mean
+        # Exploration and Exploitation
+        return np.clip(action+noise,self.action_min,self.action_max)
+
     def remember(self, state, action, reward, next_state, done, goal=None):
         state       = np.array(state,       dtype=np.float32)
         action      = np.array(action,      dtype=np.float32)
@@ -98,30 +105,6 @@ class TD3Agent:
             transition  = (state, action, reward, next_state, done)
         self.memory.append(transition)
         return
-
-    def hard_update_target_model(self):
-        self.target_actor.set_weights(self.actor.get_weights())
-        self.target_critic1.set_weights(self.critic1.get_weights())
-        self.target_critic2.set_weights(self.critic2.get_weights())
-
-    def soft_update_target_model(self):
-        tau = self.tau
-        for (net, target_net) in zip(   self.actor.trainable_variables,
-                                        self.target_actor.trainable_variables):
-            target_net.assign(tau * net + (1.0 - tau) * target_net)
-        for (net, target_net) in zip(   self.critic1.trainable_variables,
-                                        self.target_critic1.trainable_variables):
-            target_net.assign(tau * net + (1.0 - tau) * target_net)
-        for (net, target_net) in zip(   self.critic2.trainable_variables,
-                                        self.target_critic2.trainable_variables):
-            target_net.assign(tau * net + (1.0 - tau) * target_net)
-
-    def get_action(self,state):
-        state = tf.convert_to_tensor([state], dtype=tf.float32)
-        action = self.actor(state).numpy()[0]
-        noise = np.random.randn(self.action_size)*self.noise_std_dev + self.noise_mean
-        # Exploration and Exploitation
-        return np.clip(action+noise,self.action_min,self.action_max)
 
     def train_model(self):
         # Train from Experience Replay
@@ -198,7 +181,7 @@ class TD3Agent:
         critic_loss_out = 0.5*(critic1_loss.numpy() + critic2_loss.numpy())
         return critic_loss_out, actor_loss_out
 
-    def update_network(self,done=False):
+    def update_model(self,done=False):
         if self.train_idx % self.update_freq == 0:
             self.soft_update_target_model()
         return
@@ -214,3 +197,20 @@ class TD3Agent:
         self.critic1.save_weights(at + self.filename + "_TF_critic1", save_format="tf")
         self.critic2.save_weights(at + self.filename + "_TF_critic2", save_format="tf")
         return
+        
+    def hard_update_target_model(self):
+        self.target_actor.set_weights(self.actor.get_weights())
+        self.target_critic1.set_weights(self.critic1.get_weights())
+        self.target_critic2.set_weights(self.critic2.get_weights())
+
+    def soft_update_target_model(self):
+        tau = self.tau
+        for (net, target_net) in zip(   self.actor.trainable_variables,
+                                        self.target_actor.trainable_variables):
+            target_net.assign(tau * net + (1.0 - tau) * target_net)
+        for (net, target_net) in zip(   self.critic1.trainable_variables,
+                                        self.target_critic1.trainable_variables):
+            target_net.assign(tau * net + (1.0 - tau) * target_net)
+        for (net, target_net) in zip(   self.critic2.trainable_variables,
+                                        self.target_critic2.trainable_variables):
+            target_net.assign(tau * net + (1.0 - tau) * target_net)

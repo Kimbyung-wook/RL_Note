@@ -103,7 +103,7 @@ if __name__ == "__main__":
                 next_state, reward, done, info = env.step(action)
                 agent.remember(state, action, reward, next_state, done, goal)
                 critic_loss, actor_loss = agent.train_model()
-                agent.update_network(done)
+                agent.update_model(done)
                 state = next_state
                 # 
                 score += reward
