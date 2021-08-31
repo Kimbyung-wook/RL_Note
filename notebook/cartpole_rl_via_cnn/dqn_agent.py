@@ -8,7 +8,7 @@ from er import ReplayMemory
 from per import ProportionalPrioritizedMemory
 from her import HindsightMemory
 from q_network import MLPNetwork
-from q_network import CNN3Network as CNNNetwork
+from q_network import get_CNN4Network as CNNNetwork
 
 
 class DQNAgent:
@@ -20,10 +20,14 @@ class DQNAgent:
         self.er_cfg     = cfg['RL']['ER']
         self.rl_type    = self.rl_cfg['ALGORITHM']
         self.er_type    = self.er_cfg["ALGORITHM"].upper()
-        self.filename   = self.env_cfg['NAME'] + '_' + self.rl_cfg["ALGORITHM"] + '_' + self.er_cfg["ALGORITHM"]
+        RL_NAME = self.rl_cfg["ALGORITHM"]
+        for item in self.rl_cfg['TYPE']:
+            RL_NAME = RL_NAME + '_' + item
+        self.filename   = self.env_cfg['NAME'] + '_' + RL_NAME + '_' + self.er_cfg["ALGORITHM"]
         if self.er_cfg["ALGORITHM"] == "HER":
             self.filename = self.filename + '_' + self.er_cfg["STRATEGY"]
-        self.filename = self.filename + '_' + cfg["ADD_NAME"]
+        for item in cfg["ADD_NAME"]:
+            self.filename  = self.filename + '_' + item
 
         print(self.filename)
         print('States {0}, Actions {1}'.format(self.state_size, self.action_size))
@@ -56,8 +60,8 @@ class DQNAgent:
         self.optimizer = tf.keras.optimizers.Adam(learning_rate=self.learning_rate)
         if self.env_cfg['STATE_TYPE'] == "MLP":
             print('Neural Network Model is MLP')
-            self.q_net        = MLPNetwork(self.state_size, self.action_size, self.rl_cfg["NETWORK"])
-            self.target_q_net = MLPNetwork(self.state_size, self.action_size, self.rl_cfg["NETWORK"])
+            self.q_net        = MLPNetwork(self.state_size, self.action_size, self.rl_cfg)
+            self.target_q_net = MLPNetwork(self.state_size, self.action_size, self.rl_cfg)
             # self.q_net.build(input_shape=(None,4))
             # self.target_q_net.build(input_shape=(None, 4))
             # state_in = Input((4,))
@@ -65,8 +69,8 @@ class DQNAgent:
             # self.target_q_net(state_in)
         elif self.env_cfg['STATE_TYPE'] == 'IMG':
             print('Neural Network Model is MLP with CNN')
-            self.q_net        = CNNNetwork(self.state_size, self.action_size, self.rl_cfg["NETWORK"])
-            self.target_q_net = CNNNetwork(self.state_size, self.action_size, self.rl_cfg["NETWORK"])
+            self.q_net        = CNNNetwork(self.state_size, self.action_size, self.rl_cfg)
+            self.target_q_net = CNNNetwork(self.state_size, self.action_size, self.rl_cfg)
             self.q_net.summary()
         # self.target_q_net.summary()
         self.hard_update_target_model()

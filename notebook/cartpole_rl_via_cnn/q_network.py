@@ -33,7 +33,7 @@ from tensorflow.keras import Model
 class MLPNetwork(tf.keras.Model):
     def __init__(self, state_size, action_size,cfg):
         super(MLPNetwork, self).__init__()
-        self.structure = cfg["LAYER"]
+        self.structure = cfg['NETWORK']["LAYER"]
         self.fcs = []
         for numbers in self.structure:
             fc = Dense(numbers,activation='relu')
@@ -49,7 +49,7 @@ class MLPNetwork(tf.keras.Model):
 class CNNNetwork(tf.keras.Model):
     def __init__(self, state_size, action_size,cfg):
         super(CNNNetwork, self).__init__()
-        self.structure = cfg["LAYER"]
+        self.structure = cfg['NETWORK']["LAYER"]
         self.fcs = []
         fc = Conv2D(filters=32, kernel_size=8, strides=4, padding='valid', activation='relu', data_format='channels_last'); self.fcs.append(fc)
         fc = Conv2D(filters=64, kernel_size=4, strides=2, padding='valid', activation='relu', data_format='channels_last'); self.fcs.append(fc)
@@ -70,7 +70,7 @@ class CNN1Network(tf.keras.Model):
     # https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html
     def __init__(self, state_size, action_size,cfg):
         super(CNN1Network, self).__init__()
-        self.structure = cfg["LAYER"]
+        self.structure = cfg['NETWORK']["LAYER"]
         self.fcs = []
         fc = Conv2D(filters=16, kernel_size=5, strides=2, padding='valid', activation='relu', data_format='channels_last'); self.fcs.append(fc)
         fc = BatchNormalization()
@@ -93,7 +93,7 @@ class CNN2Network(tf.keras.Model):
     # My Custom
     def __init__(self, state_size, action_size,cfg):
         super(CNN2Network, self).__init__()
-        self.structure = cfg["LAYER"]
+        self.structure = cfg['NETWORK']["LAYER"]
         self.fcs = []
         fc = Conv2D(filters=16, kernel_size=4, strides=1, padding='valid', activation='relu', data_format='channels_last'); self.fcs.append(fc)
         fc = MaxPool2D(pool_size=2, strides=1, padding='valid', data_format='channels_last'); self.fcs.append(fc)
@@ -134,18 +134,18 @@ class CNN2Network(tf.keras.Model):
 #         q = self.out(x)
 #         return q
 
-
-def CNN3Network(input_shape, action_space,cfg):
+# 6000 epi에서 최대 110점
+def get_CNN3Network(input_shape, action_space,cfg):
     X_input = Input(input_shape)
-    # 4 x 160 x 240
+    # 120 x 40 x N
     X = X_input 
     X = Conv2D(filters=64, kernel_size=5, strides=3, padding='valid', activation='relu', data_format='channels_last')(X)
     X = Conv2D(filters=64, kernel_size=4, strides=2, padding='valid', activation='relu', data_format='channels_last')(X)
     X = Conv2D(filters=64, kernel_size=3, strides=1, padding='valid', activation='relu', data_format='channels_last')(X)
     X = Flatten()(X)
-    X = Dense(units=128, activation='relu',kernel_initializer='he_uniform')(X)
-    X = Dense(units= 64, activation='relu',kernel_initializer='he_uniform')(X)
-    X = Dense(units= 32, activation='relu',kernel_initializer='he_uniform')(X)
+    X = Dense(units=256, activation='relu',kernel_initializer='he_uniform')(X)
+    # X = Dense(units= 64, activation='relu',kernel_initializer='he_uniform')(X)
+    # X = Dense(units= 32, activation='relu',kernel_initializer='he_uniform')(X)
     X = Dense(units= action_space, activation='relu',kernel_initializer='he_uniform')(X)
 
     # model = Model(inputs = X_input, outputs = X, name='CartPole PER D3QN CNN model')
@@ -156,18 +156,46 @@ def CNN3Network(input_shape, action_space,cfg):
     # model.summary()
     return model
 
+def get_CNN4Network(input_shape, action_space,cfg):
+    X_input = Input(input_shape)
+    # 120 x 40 x N
+    X = X_input 
+    X = Conv2D(     filters=64, kernel_size=(6,2),  strides=2, padding='valid', data_format='channels_last', name='Conv1', activation='relu')(X)
+    X = MaxPool2D(              pool_size=(6,2),    strides=2, padding='valid', data_format='channels_last', name='MaxPool1')(X)
+    X = Conv2D(     filters=64, kernel_size=(6,2),  strides=2, padding='valid', data_format='channels_last', name='Conv2', activation='relu')(X)
+    X = MaxPool2D(              pool_size=2,        strides=1, padding='valid', data_format='channels_last', name='MaxPool2')(X)
+    X = Conv2D(     filters=64, kernel_size=2,      strides=1, padding='valid', data_format='channels_last', name='Conv3', activation='relu')(X)
+    X = Flatten()(X)
+    X = Dense(units=256, activation='relu',kernel_initializer='he_uniform')(X)
+    A = X
+    A = Dense(units= 64,            activation='relu',  kernel_initializer='he_uniform', name='Adv1')(A)
+    A = Dense(units = action_space, activation='linear',kernel_initializer='he_uniform', name='Adv2')(A)
+    if "DUELING" in cfg['TYPE']:
+        print('Define DUELING')
+        V = X
+        V = Dense(units= 64, activation='relu',  kernel_initializer='he_uniform', name='Val1')(X)
+        V = Dense(units = 1, activation='linear',kernel_initializer='he_uniform', name='Val2')(V)
+        Q = V + A - tf.reduce_mean(A, axis=1, keepdims=True)
+    else:
+        Q = A
+    model = Model(inputs = X_input, outputs = Q, name='CNN4')
+    model.build(input_shape=input_shape)
+    # model.compile(loss="mean_squared_error", optimizer=RMSprop(lr=0.001, rho=0.95, epsilon=0.01), metrics=["accuracy"])
+
+    # model.summary()
+    return model
 class CNN4Network(tf.keras.Model):
     # https://pylessons.com/CartPole-PER-CNN/
     def __init__(self, state_size, action_size,cfg):
         super(CNN4Network, self).__init__()
         self.structure = cfg["LAYER"]
         self.fcs = []
-        fc = Conv2D(filters=64, kernel_size=5, strides=3, padding='valid', activation='relu', data_format='channels_last'); self.fcs.append(fc)
-        fc = MaxPool2D(pool_size=2, strides=1, padding='valid', data_format='channels_last'); self.fcs.append(fc)
-        fc = Conv2D(filters=64, kernel_size=4, strides=2, padding='valid', activation='relu', data_format='channels_last'); self.fcs.append(fc)
-        fc = MaxPool2D(pool_size=2, strides=1, padding='valid', data_format='channels_last'); self.fcs.append(fc)
-        fc = Conv2D(filters=64, kernel_size=3, strides=1, padding='valid', activation='relu', data_format='channels_last'); self.fcs.append(fc)
-        fc = MaxPool2D(pool_size=2, strides=1, padding='valid', data_format='channels_last'); self.fcs.append(fc)
+        fc = Conv2D(    filters=64, kernel_size=5,  strides=3, padding='valid', data_format='channels_last', activation='relu'); self.fcs.append(fc)
+        fc = MaxPool2D(             pool_size=2,    strides=1, padding='valid', data_format='channels_last'); self.fcs.append(fc)
+        fc = Conv2D(    filters=64, kernel_size=4,  strides=2, padding='valid', data_format='channels_last', activation='relu'); self.fcs.append(fc)
+        fc = MaxPool2D(             pool_size=2,    strides=1, padding='valid', data_format='channels_last'); self.fcs.append(fc)
+        fc = Conv2D(    filters=64, kernel_size=3,  strides=1, padding='valid', data_format='channels_last', activation='relu'); self.fcs.append(fc)
+        fc = MaxPool2D(             pool_size=2,    strides=1, padding='valid', data_format='channels_last'); self.fcs.append(fc)
         fc = Flatten(); self.fcs.append(fc)
         fc = Dense(units=128, activation='relu',kernel_initializer='he_uniform'); self.fcs.append(fc)
         fc = Dense(units=64, activation='relu',kernel_initializer='he_uniform'); self.fcs.append(fc)

@@ -49,7 +49,7 @@ class DQNAgent:
         # Neural Network Architecture
         self.q_net        = QNetwork(self.state_size, self.action_size, cfg["RL"]["NETWORK"])
         self.target_q_net = QNetwork(self.state_size, self.action_size, cfg["RL"]["NETWORK"])
-        if self.rl_type == "DEULING":
+        if self.rl_type == "DUELING":
             self.a_net        = QNetwork(self.state_size+self.action_size, self.action_size, cfg["RL"]["NETWORK"])
             self.target_a_net = QNetwork(self.state_size+self.action_size, self.action_size, cfg["RL"]["NETWORK"])  
         self.optimizer = tf.keras.optimizers.Adam(learning_rate=self.learning_rate)
@@ -80,7 +80,7 @@ class DQNAgent:
         
     def hard_update_target_model(self):
         self.target_q_net.set_weights(self.q_net.get_weights())
-        if self.rl_type == "DEULING":
+        if self.rl_type == "DUELING":
             self.target_a_net.set_weights(self.a_net.get_weights())
 
 
@@ -89,7 +89,7 @@ class DQNAgent:
         for (net, target_net) in zip(   self.q_net.trainable_variables,
                                         self.target_q_net.trainable_variables):
             target_net.assign(tau * net + (1.0 - tau) * target_net)
-        if self.rl_type == "DEULING":
+        if self.rl_type == "DUELING":
             for (net, target_net) in zip(   self.q_net.trainable_variables,
                                             self.target_q_net.trainable_variables):
                 target_net.assign(tau * net + (1.0 - tau) * target_net)

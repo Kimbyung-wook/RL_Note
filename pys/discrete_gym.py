@@ -33,8 +33,8 @@ if gpus:
 lists = (
     # (''),
     # ('DOUBLE',),
-    ('DEULING',),
-    # ('DEULING','DOUBLE',),
+    ('DUELING',),
+    # ('DUELING','DOUBLE',),
   )
 print('Batch list : ',lists)
 

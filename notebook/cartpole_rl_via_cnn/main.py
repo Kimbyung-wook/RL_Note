@@ -35,21 +35,21 @@ lists = (
 print('Batch list : ',lists)
 
 scores_avg, scores_raw, episodes, losses, epsilons = [], [], [], [], []
-def save_statistics():
+def save_statistics(filename):
     # View data
     plt.clf()
     plt.subplot(311)
     plt.plot(scores_avg, 'b')
     plt.plot(scores_raw, 'b', alpha=0.8, linewidth=0.5)
     plt.xlabel('Episodes'); plt.ylabel('average score'); plt.grid()
-    plt.title(FILENAME)
+    plt.title(filename)
     plt.subplot(312)
     plt.plot(epsilons, 'b')
     plt.xlabel('Episodes'); plt.ylabel('epsilon'); plt.grid()
     plt.subplot(313)
     plt.plot(losses, 'b')
     plt.xlabel('Episodes'); plt.ylabel('losses') ;plt.grid()
-    plt.savefig(FILENAME + "_TF.jpg", dpi=100)
+    plt.savefig(filename + "_TF.jpg", dpi=100)
 
 if __name__ == "__main__":
     for item in lists:
@@ -68,6 +68,8 @@ if __name__ == "__main__":
                 "RL":{
                     "ALGORITHM":'DQN',
                     "STATE_TYPE":STATE_TYPE,
+                    # 'TYPE':('',),
+                    'TYPE':('DUELING',),
                     "NETWORK":{
                         "LAYER":[128,128],
                     },
@@ -79,14 +81,18 @@ if __name__ == "__main__":
                     "TRAIN_START":2000,
                     "MEMORY_SIZE":50000,
                     },
-                "ADD_NAME":STATE_TYPE+str(item[0]),
+                "ADD_NAME":(STATE_TYPE,str(item[0]),),
                 # "ADD_NAME":STATE_TYPE,
                 }
         env_config = env_configs[cfg["ENV"]["NAME"]]
-        FILENAME = cfg["ENV"]["NAME"] + '_' + cfg["RL"]["ALGORITHM"] + '_' + cfg["RL"]["ER"]["ALGORITHM"]
+        RL_NAME = cfg["RL"]["ALGORITHM"]
+        for item in cfg["RL"]['TYPE']:
+            RL_NAME = RL_NAME + '_' + item
+        FILENAME = cfg["ENV"]["NAME"] + '_' + RL_NAME + '_' + cfg["RL"]["ER"]["ALGORITHM"]
         if cfg['RL']["ER"]["ALGORITHM"] == "HER":
             FILENAME = FILENAME + '_' + cfg["ER"]["STRATEGY"]
-        FILENAME = FILENAME + '_' + cfg["ADD_NAME"]
+        for item in cfg["ADD_NAME"]:
+            FILENAME  = FILENAME + '_' + item
         EPISODES = env_config["EPISODES"]
         END_SCORE = env_config["END_SCORE"]
 
@@ -160,11 +166,11 @@ if __name__ == "__main__":
                     losses.append(np.mean(loss_list))
                     epsilons.append(agent.epsilon)
                     if e % save_freq == 0:
-                        save_statistics()
+                        save_statistics(FILENAME)
                     # 이동 평균이 0 이상일 때 종료
                     if score_avg > END_SCORE:
                         agent.save_model("")
-                        save_statistics()
+                        save_statistics(FILENAME)
                         end = True
                         break
             if end == True:

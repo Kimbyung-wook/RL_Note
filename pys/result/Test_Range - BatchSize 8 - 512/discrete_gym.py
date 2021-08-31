@@ -49,7 +49,7 @@ if __name__ == "__main__":
                     "ALGORITHM":item[0],\
                     "TYPE":None,\
                     # "TYPE":'DOUBLE',\ # DQN
-                    # "TYPE":'DEULING',\ # DQN
+                    # "TYPE":'DUELING',\ # DQN
                     "NETWORK":{
                         "LAYER":[128,128],\
                     }

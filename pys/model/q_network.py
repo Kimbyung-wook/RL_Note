@@ -29,16 +29,17 @@ class QNetwork(tf.keras.Model):
         return q
 
 def get_q_network(state_space, action_space, cfg):
+    structure = cfg['NETWORK']["LAYER"]
     X_input = Input(shape=state_space)
     X = X_input
-    for item in cfg['NETWORK']["LAYER"]:
-        X = Dense(units=item, activation='relu')(X)
-    Adv = Dense(units=action_space, activation='relu')(X)
+    for idx in range(len(structure)):
+        X = Dense(units=structure[idx], activation='relu',name='Layer'+str(idx))(X)
+    A = Dense(units=action_space, activation='relu', name='Adv')(X)
     if 'DUELING' in cfg['TYPE']:
-        Val = Dense(units=1, activation='relu')(X)
-        Q = Val + Adv - tf.reduce_mean(Adv, axis=1, keepdims=True)
+        V = Dense(units=1, activation='relu', name='Val')(X)
+        Q = V + A - tf.reduce_mean(A, axis=1, keepdims=True)
     else:
-        Q = Adv
+        Q = A
 
     model = Model(inputs = X_input, outputs = Q, name='q_network')
     model.build(input_shape = state_space)
