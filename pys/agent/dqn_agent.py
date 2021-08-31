@@ -129,7 +129,7 @@ class DQNAgent:
             # Target q and maximum target q
             target_q = tf.stop_gradient(self.target_model(next_states))
             if "DOUBLE" in self.rl_type: # Double Estimator
-                new_actions = np.argmax(self.model(states))
+                new_actions = np.argmax(self.model(next_states))
                 one_hot_action = tf.one_hot(new_actions, self.action_size)
                 max_q = tf.reduce_sum(one_hot_action * target_q, axis=1)
             else: # Single Estimator

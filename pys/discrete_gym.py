@@ -31,9 +31,9 @@ if gpus:
     print(e)
     
 lists = (
-    # (),
-    ('DOUBLE',),
-    # ('DEULING',),
+    # (''),
+    # ('DOUBLE',),
+    ('DEULING',),
     # ('DEULING','DOUBLE',),
   )
 print('Batch list : ',lists)
@@ -52,7 +52,7 @@ if __name__ == "__main__":
         }
       },\
       "ER":{
-        "ALGORITHM":'ER',\
+        "ALGORITHM":'PER',\
         "REPLAY_N":8,\
         "STRATEGY":"EPISODE",\
         "REWARD_FUNC":reward_function,\

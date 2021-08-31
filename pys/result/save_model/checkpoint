@@ -1,2 +1,2 @@
-model_checkpoint_path: "CartPole-v1_DQN_DEULING_ER_TF"
-all_model_checkpoint_paths: "CartPole-v1_DQN_DEULING_ER_TF"
+model_checkpoint_path: "CartPole-v1_DQN_DEULING_PER_TF"
+all_model_checkpoint_paths: "CartPole-v1_DQN_DEULING_PER_TF"
