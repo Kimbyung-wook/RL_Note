@@ -49,7 +49,7 @@ class DQNAgent():
     self.show_media_info = False
     self.steps = 0
     
-  def get_actions(self, state):
+  def get_action(self, state):
     self.steps += 1
     # Exploration and Exploitation
     if ((np.random.rand() <= self.epsilon) or ()):
@@ -125,7 +125,7 @@ class DQNAgent():
       for i in range(self.batch_size):
         self.memory.update(idxs[i], sample_importance[i])
 
-    return loss
+    return loss.numpy()
 
   def update_model(self):
     if self.steps % self.update_freq == 0:
