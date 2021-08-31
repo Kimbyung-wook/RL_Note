@@ -10,8 +10,8 @@ from tensorflow.keras import Model
 from tensorflow.keras.layers import Dense, Input, ReLU, Conv2D, Flatten
 from tensorflow.keras.optimizers import Adam
 import matplotlib.pyplot as plt
-from ER import ReplayMemory
-from PER import ProportionalPrioritizedMemory
+from er import ReplayMemory
+from per import ProportionalPrioritizedMemory
 from featurization import Featurization
 from dqn_agent import DQNAgent
 
