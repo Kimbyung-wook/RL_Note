@@ -24,7 +24,7 @@ class DQNAgent():
     self.learning_rate  = 0.005
     self.epsilon        = 1.0
     self.epsilon_decay  = 0.999
-    self.epsilon_min    = 0.01
+    self.epsilon_min    = 0.1
     self.tau            = 0.005
 
     self.start_to_train = self.er_cfg["TRAIN_START"]
