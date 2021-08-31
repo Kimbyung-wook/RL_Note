@@ -50,15 +50,6 @@ class BaseAgent:
 
     def train_model(self):
         NotImplementedError
- 
-    def hard_update_target_model(self):
-        NotImplementedError
-
-    def soft_update_target_model(self):
-        '''
-        Update target model
-        '''
-        NotImplementedError
 
     def load_model(self,at):
         '''
@@ -70,4 +61,10 @@ class BaseAgent:
         '''
         Save trained model
         '''
+        NotImplementedError
+ 
+    def hard_update_target_model(self):
+        NotImplementedError
+
+    def soft_update_target_model(self):
         NotImplementedError
