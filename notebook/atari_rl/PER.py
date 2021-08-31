@@ -11,7 +11,7 @@ class ProportionalPrioritizedMemory:  # stored as ( s, a, r, s_ ) in SumTree
     beta = 0.4
     # a = 0.7     # For rank-based variant
     # beta = 0.5
-    alpha_increment_per_sampling = 0.001
+    # alpha_increment_per_sampling = 0.001
     beta_increment_per_sampling = 0.001
     epsilon = 0.0001  # Proportional Prioritization
     abs_err_upper = 1.000
@@ -42,7 +42,7 @@ class ProportionalPrioritizedMemory:  # stored as ( s, a, r, s_ ) in SumTree
         batch, idxs, priorities = [], [], []
         segment = self.tree.total() / n
 
-        self.alpha = np.max([0., self.alpha - self.alpha_increment_per_sampling])
+        # self.alpha = np.max([0., self.alpha - self.alpha_increment_per_sampling])
         self.beta  = np.min([1., self.beta  + self.beta_increment_per_sampling])
 
         for i in range(n):

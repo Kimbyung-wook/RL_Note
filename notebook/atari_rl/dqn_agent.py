@@ -26,6 +26,7 @@ class DQNAgent():
     self.epsilon_decay  = 0.999
     self.epsilon_min    = 0.01
     self.tau            = 0.005
+
     self.start_to_train = self.er_cfg["TRAIN_START"]
     self.batch_size     = self.er_cfg["BATCH_SIZE"]
     self.buffer_size    = self.er_cfg["MEMORY_SIZE"]
@@ -57,7 +58,7 @@ class DQNAgent():
       state = tf.convert_to_tensor([state], dtype=tf.float32)
       return np.argmax(self.model(state))
 
-  def remember(self, state, action, reward, next_state, done):
+  def remember(self, state, action, reward, next_state, done, goal=None):
     state       = np.array(state,       dtype=np.float32)
     action      = np.array([action])
     reward      = np.array([reward],    dtype=np.float32)
@@ -67,12 +68,15 @@ class DQNAgent():
     self.memory.append(transition)
     return
 
-  def train(self):
+  def train_model(self):
     if self.steps < self.start_to_train:
       return 0.0
     # Sampling from the memory
     if self.steps % self.train_freq == 0:
       return 0.0
+    # Decaying Exploration Ratio
+    if self.epsilon > self.epsilon_min:
+        self.epsilon *= self.epsilon_decay
     if self.er_type == "ER":
       mini_batch = self.memory.sample(self.batch_size)
     elif self.er_type == "PER":
@@ -123,7 +127,7 @@ class DQNAgent():
 
     return loss
 
-  def update_target_net(self):
+  def update_model(self):
     if self.steps % self.update_freq == 0:
       self.target_model.set_weights(self.model.get_weights())
     return

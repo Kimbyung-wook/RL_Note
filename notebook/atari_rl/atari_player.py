@@ -54,12 +54,12 @@ cfg = {\
     "ALGORITHM":'DQN',
     "ER":{
       "ALGORITHM":'ER',
-      "BATCH_SIZE":1024,
+      "BATCH_SIZE":64,
       "TRAIN_START":20000,
-      "MEMORY_SIZE":200000,
+      "MEMORY_SIZE":100000,
     },
     "TRAIN_FREQ":4,
-    "UPDATE_FREQ":1000,
+    "UPDATE_FREQ":2000,
   },
 }
 ENV_NAME = cfg['ENV']['NAME']
@@ -76,7 +76,8 @@ if __name__ == "__main__":
     episode_step = 0
     loss_list = []
     while True:
-      # obs = env.render(mode='human')
+      if e % 100 == 0:
+        env.render(mode='human')
       # action = env.action_space.sample()
       action = agent.get_actions(feature)
       observe, reward, done, info = env.step(action=action)
@@ -93,7 +94,7 @@ if __name__ == "__main__":
       # break
       if (done == True) or (episode_step > MAX_STEP_PER_EPISODE):
         score_avg = 0.9 * score_avg + 0.1 * episode_score if score_avg != 0 else episode_score
-        print('{} epi with {} steps, epi score {}, score_avg {}'.format(e+1,global_steps,episode_score, score_avg))
+        print('{:6d} epi with {:8d} steps, epi score {:5.1f}, score_avg {:10.5f}'.format(e+1,global_steps,episode_score, score_avg))
         scores_avg.append(score_avg)
         scores_raw.append(episode_score)
         losses.append(np.mean(loss_list))

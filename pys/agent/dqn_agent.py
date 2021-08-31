@@ -77,11 +77,19 @@ class DQNAgent:
         self.memory.append(transition)
         return
         
+    def get_action(self,state):
+        self.steps += 1
+        # Exploration and Exploitation
+        if (np.random.rand() <= self.epsilon):
+            return random.randrange(self.action_size)
+        else:
+            state = tf.convert_to_tensor([state], dtype=tf.float32)
+            return np.argmax(self.q_net(state))
+        
     def hard_update_target_model(self):
         self.target_q_net.set_weights(self.q_net.get_weights())
         if self.rl_type == "DEULING":
             self.target_a_net.set_weights(self.a_net.get_weights())
-
 
     def soft_update_target_model(self):
         tau = self.tau
@@ -93,15 +101,6 @@ class DQNAgent:
                                             self.target_q_net.trainable_variables):
                 target_net.assign(tau * net + (1.0 - tau) * target_net)
 
-    def get_action(self,state):
-        self.steps += 1
-        # Exploration and Exploitation
-        if (np.random.rand() <= self.epsilon):
-            return random.randrange(self.action_size)
-        else:
-            state = tf.convert_to_tensor([state], dtype=tf.float32)
-            return np.argmax(self.q_net(state))
-        
     def train_model(self):
         # Train from Experience Replay
         # Training Condition - Memory Size
@@ -164,7 +163,7 @@ class DQNAgent:
 
         return loss
 
-    def update_network(self,done=False):
+    def update_mode(self,done=False):
         if done == True:
             self.hard_update_target_model()
         # if self.steps % self.update_period != 0:

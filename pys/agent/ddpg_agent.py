@@ -93,6 +93,13 @@ class DDPGAgent:
         self.memory.append(transition)
         return
 
+    def get_action(self,state):
+        state = tf.convert_to_tensor([state], dtype=tf.float32)
+        action = self.actor(state).numpy()[0]
+        noise = self.ou_noise()
+        # Exploration and Exploitation
+        return np.clip(action+noise,self.action_min,self.action_max)
+
     def hard_update_target_model(self):
         self.target_actor.set_weights(self.actor.get_weights())
         self.target_critic.set_weights(self.critic.get_weights())
@@ -105,13 +112,6 @@ class DDPGAgent:
         for (net, target_net) in zip(   self.critic.trainable_variables,
                                         self.target_critic.trainable_variables):
             target_net.assign(tau * net + (1.0 - tau) * target_net)
-
-    def get_action(self,state):
-        state = tf.convert_to_tensor([state], dtype=tf.float32)
-        action = self.actor(state).numpy()[0]
-        noise = self.ou_noise()
-        # Exploration and Exploitation
-        return np.clip(action+noise,self.action_min,self.action_max)
 
     def train_model(self):
         # Train from Experience Replay
@@ -178,7 +178,7 @@ class DDPGAgent:
 
         return critic_loss_out, actor_loss_out
 
-    def update_network(self,done=False):
+    def update_model(self,done=False):
         if self.train_idx % self.update_freq == 0:
             self.soft_update_target_model()
         return

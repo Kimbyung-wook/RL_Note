@@ -45,20 +45,38 @@ class BaseAgent:
         self.memory.append(transition)
         return
 
+    def get_action(self,state):
+        NotImplementedError
+
     def hard_update_target_model(self):
         NotImplementedError
 
     def soft_update_target_model(self):
-        NotImplementedError
-
-    def get_action(self,state):
+        '''
+        Update target model
+        '''
         NotImplementedError
 
     def train_model(self):
+        '''
+        Train model
+        '''
+        NotImplementedError
+
+    def update_model(self):
+        '''
+        Update Target model
+        '''
         NotImplementedError
         
     def load_model(self,at):
+        '''
+        Load pre-trained model
+        '''
         NotImplementedError
 
     def save_model(self,at):
+        '''
+        Save trained model
+        '''
         NotImplementedError
