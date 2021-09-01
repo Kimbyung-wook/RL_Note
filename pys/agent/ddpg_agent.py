@@ -41,17 +41,17 @@ class DDPGAgent:
 
         # Hyper params for learning
         self.discount_factor = 0.99
-        self.actor_learning_rate  = 0.001
-        self.critic_learning_rate = 0.002
-        self.tau = 0.005
+        self.actor_lr   = 0.001
+        self.critic_lr  = 0.002
+        self.tau        = 0.005
 
         # Networks
         self.critic         = Critic(self.state_size, self.action_size, cfg=cfg['RL']["NETWORK"])
         self.target_critic  = Critic(self.state_size, self.action_size, cfg=cfg['RL']["NETWORK"])
         self.actor          = Actor(self.state_size, self.action_size, self.action_min, self.action_max, cfg=cfg['RL']["NETWORK"])
         self.target_actor   = Actor(self.state_size, self.action_size, self.action_min, self.action_max, cfg=cfg['RL']["NETWORK"])
-        self.critic_optimizer   = tf.keras.optimizers.Adam(lr=self.critic_learning_rate)
-        self.actor_optimizer    = tf.keras.optimizers.Adam(lr=self.actor_learning_rate)
+        self.critic_optimizer   = tf.keras.optimizers.Adam(lr=self.critic_lr)
+        self.actor_optimizer    = tf.keras.optimizers.Adam(lr=self.actor_lr)
 
         self.actor.build(input_shape=(None, self.state_size))
         self.target_actor.build(input_shape=(None, self.state_size))

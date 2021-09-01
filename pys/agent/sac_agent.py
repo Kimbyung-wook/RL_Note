@@ -45,11 +45,11 @@ class SACAgent:
 
         # Hyper params for learning
         self.discount_factor = 0.99
-        self.critic_learning_rate = 0.002
-        self.actor_learning_rate  = 0.001
-        self.alpha_learning_rate  = 0.001
-        self.tau = 0.005
-        self.alpha = 0.200 # temperature
+        self.critic_lr  = 0.002
+        self.actor_lr   = 0.001
+        self.alpha_lr   = 0.001
+        self.tau        = 0.005
+        self.alpha      = 0.200 # temperature
 
         # Networks
         self.critic1        = Critic(self.state_size, self.action_size, cfg=cfg['RL']["NETWORK"])
@@ -61,10 +61,10 @@ class SACAgent:
         self.log_alpha      = tf.math.log(0.2)
         self.alpha          = tf.math.exp(self.log_alpha)
         # Optimizer
-        self.critic1_optimizer  = tf.keras.optimizers.Adam(learning_rate=self.critic_learning_rate)
-        self.critic2_optimizer  = tf.keras.optimizers.Adam(learning_rate=self.critic_learning_rate)
-        self.actor_optimizer    = tf.keras.optimizers.Adam(learning_rate=self.actor_learning_rate)
-        self.alpha_optimizer    = tf.keras.optimizers.Adam(learning_rate=self.alpha_learning_rate)
+        self.critic1_optimizer  = tf.keras.optimizers.Adam(learning_rate=self.critic_lr)
+        self.critic2_optimizer  = tf.keras.optimizers.Adam(learning_rate=self.critic_lr)
+        self.actor_optimizer    = tf.keras.optimizers.Adam(learning_rate=self.actor_lr)
+        self.alpha_optimizer    = tf.keras.optimizers.Adam(learning_rate=self.alpha_lr)
 
 
         self.actor.build(input_shape=(None, self.state_size))

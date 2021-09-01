@@ -13,9 +13,16 @@ class MDQNAgent:
         self.state_size = env.observation_space.shape[0]
         self.action_size= env.action_space.n
         self.env_name   = cfg["ENV"]
-        self.rl_type    = "MDQN"
+        self.rl_type    = cfg["RL"]['TYPE']
         self.er_type    = cfg["ER"]["ALGORITHM"].upper()
-        self.filename   = cfg["ENV"] + '_' + cfg["RL"]["ALGORITHM"] + '_' + cfg["ER"]["ALGORITHM"]
+        rl_name = cfg["RL"]["ALGORITHM"]
+        for item in cfg['RL']['TYPE']:
+            rl_name = rl_name + '_' + item
+        self.filename   = cfg["ENV"] + '_' + rl_name + '_' + cfg["ER"]["ALGORITHM"]
+        if cfg["ER"]["ALGORITHM"] == "HER":
+            self.filename = self.filename + '_' + cfg["ER"]["STRATEGY"]
+        for item in cfg["ADD_NAME"]:
+            self.filename = self.filename + '_' + item
 
         # Experience Replay
         self.batch_size = cfg["BATCH_SIZE"]
@@ -36,14 +43,14 @@ class MDQNAgent:
 
         # Hyper-parameters for learning
         self.discount_factor = 0.99
-        self.learning_rate = 0.001
-        self.epsilon = 1.0
-        self.epsilon_decay = 0.999
-        self.epsilon_min = 0.01
-        self.tau = 0.005
-        self.entropy_tau = 0.03
-        self.alpha = 0.9        
-        self.lo = -1
+        self.learning_rate  = 0.001
+        self.epsilon        = 1.0
+        self.epsilon_decay  = 0.999
+        self.epsilon_min    = 0.01
+        self.tau            = 0.005
+        self.entropy_tau    = 0.03
+        self.alpha          = 0.9        
+        self.lo             = -1
         
         # Neural Network Architecture
         self.model        = QNetwork(self.state_size, self.action_size, cfg["RL"]["NETWORK"])
