@@ -63,7 +63,6 @@ class MDQNAgent:
         self.steps = 0
         self.update_period = 100
         # self.interaction_period = 1
-        self.is_done = False
 
         print(self.filename)
         print('States {0}, Actions {1}'.format(self.state_size, self.action_size))
@@ -181,10 +180,9 @@ class MDQNAgent:
         return loss
 
     def update_model(self,done = False):
+        # if done == True:
         if self.steps % self.update_period != 0:
             self.hard_update_target_model()
-        # if done == True:
-        #     self.hard_update_target_model()
         return
 
     def load_model(self,at):

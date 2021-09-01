@@ -20,13 +20,13 @@ class QNetwork(tf.keras.Model):
     def call(self,x):
         for fc in self.fcs:
             x = fc(x)
-        adv = self.adv(x)
+        A = self.adv(x)
         if 'DUELING' in self.q_type:
-            val = self.val(x)
-            q = val + adv - tf.reduce_mean(adv, axis=1, keepdims=True)
+            V = self.val(x)
+            Q = V + A - tf.reduce_mean(A, axis=1, keepdims=True)
         else:
-            q = adv
-        return q
+            Q = A
+        return Q
 
 def get_q_network(state_space, action_space, cfg):
     structure = cfg['NETWORK']["LAYER"]
@@ -34,9 +34,11 @@ def get_q_network(state_space, action_space, cfg):
     X = X_input
     for idx in range(len(structure)):
         X = Dense(units=structure[idx], activation='relu',name='Layer'+str(idx))(X)
-    A = Dense(units=action_space, activation='relu', name='Adv')(X)
+    A = X
+    A = Dense(units=action_space, activation='linear', name='Adv')(A)
     if 'DUELING' in cfg['TYPE']:
-        V = Dense(units=1, activation='relu', name='Val')(X)
+        V = X 
+        V = Dense(units=1, activation='linear', name='Val')(V)
         Q = V + A - tf.reduce_mean(A, axis=1, keepdims=True)
     else:
         Q = A

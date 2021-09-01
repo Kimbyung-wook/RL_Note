@@ -155,11 +155,10 @@ class DQNAgent:
         return loss
 
     def update_model(self,done=False):
+        # if done == True:
         if self.steps % self.update_period != 0:
             self.hard_update_target_model()
-        # if done == True:
-        #     self.hard_update_target_model()
-        # return
+        return
 
     def load_model(self,at):
         self.model.load_weights( at + self.filename + "_TF")
