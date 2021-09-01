@@ -15,26 +15,18 @@ import gym
 import numpy as np
 import matplotlib.pyplot as plt
 from env_config  import env_configs
-from pys.agent.dqn_agent import DQNAgent
-from pys.agent.mdqn_agent import MDQNAgent
-
-
+from pys.agent.agent_broker import agent_broker
 from pys.gyms.functions import mountain_car_done as done_function
 from pys.gyms.functions import mountain_car_reward as reward_function
+from pys.utils.gpu_memory_limiter import gpu_memory_limiter
 
-import tensorflow as tf
-gpus = tf.config.experimental.list_physical_devices('GPU')
-if gpus:
-  try:
-    tf.config.experimental.set_virtual_device_configuration(gpus[0], [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=1024)])
-  except RuntimeError as e:
-    print(e)
+gpu_memory_limiter(1024)
     
 lists = (
-    # (''),
-    # ('DOUBLE',),
-    ('DUELING',),
-    # ('DUELING','DOUBLE',),
+    ('MDQN','ER',''),
+    ('MDQN','PER',''),
+    # ('MDQN','ER','DUELING',),
+    # ('MDQN','PER','DUELING',),
   )
 print('Batch list : ',lists)
 
@@ -45,14 +37,14 @@ if __name__ == "__main__":
       "ENV":"CartPole-v1",\
       # "ENV":"MountainCar-v0",\
       "RL":{
-        "ALGORITHM":'DQN',\
-        "TYPE":item,
+        "ALGORITHM":item[0],\
+        "TYPE":(item[2],),
         "NETWORK":{
           "LAYER":[128,128],\
         }
       },\
       "ER":{
-        "ALGORITHM":'PER',\
+        "ALGORITHM":item[1],\
         "REPLAY_N":8,\
         "STRATEGY":"EPISODE",\
         "REWARD_FUNC":reward_function,\
@@ -60,7 +52,7 @@ if __name__ == "__main__":
       },\
       "BATCH_SIZE":128,\
       "TRAIN_START":1000,\
-      "MEMORY_SIZE":20000,\
+      "MEMORY_SIZE":50000,\
       "ADD_NAME":()
     }
     env_config = env_configs[cfg["ENV"]]
@@ -78,13 +70,8 @@ if __name__ == "__main__":
     # Define Environment
     env = gym.make(cfg["ENV"])
     # Define RL Agent
-    if cfg["RL"]["ALGORITHM"] == "DQN":
-      agent = DQNAgent(env, cfg)
-    elif cfg["RL"]["ALGORITHM"] == "A2C":
-      agent = A2CAgent(env, cfg)
-    elif cfg["RL"]["ALGORITHM"] == "MDQN":
-      agent = MDQNAgent(env, cfg)
-    
+    agent = agent_broker(rl=cfg["RL"]["ALGORITHM"], env=env, cfg=cfg)
+
     plt.clf()
     figure = plt.gcf()
     figure.set_size_inches(8,6)

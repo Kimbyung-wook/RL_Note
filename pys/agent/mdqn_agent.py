@@ -1,12 +1,12 @@
 import random
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras.layers import Input
+from tensorflow.keras.optimizers import Adam
 
 from pys.utils.ER import ReplayMemory
 from pys.utils.PER import ProportionalPrioritizedMemory
 from pys.utils.HER import HindsightMemory
-from pys.model.q_network import QNetwork
+from pys.model.q_network import QNetwork, get_q_network
 
 class MDQNAgent:
     def __init__(self, env:object, cfg:dict):
@@ -25,21 +25,20 @@ class MDQNAgent:
             self.filename = self.filename + '_' + item
 
         # Experience Replay
-        self.batch_size = cfg["BATCH_SIZE"]
-        self.train_start = cfg["TRAIN_START"]
-        self.buffer_size = cfg["MEMORY_SIZE"]
+        self.batch_size     = cfg["BATCH_SIZE"]
+        self.train_start    = cfg["TRAIN_START"]
+        self.buffer_size    = cfg["MEMORY_SIZE"]
         if self.er_type == "ER":
             self.memory = ReplayMemory(capacity=self.buffer_size)
         elif self.er_type == "PER":
             self.memory = ProportionalPrioritizedMemory(capacity=self.buffer_size)
         elif self.er_type == "HER":
             self.memory = HindsightMemory(\
-                capacity            = self.buffer_size,\
-                replay_n            = cfg["ER"]["REPLAY_N"],\
-                replay_strategy     = cfg["ER"]["STRATEGY"],\
-                reward_func         = cfg["ER"]["REWARD_FUNC"],\
-                done_func           = cfg["ER"]["DONE_FUNC"])
-            self.filename = cfg["ENV"] + '_' + cfg["RL"]["ALGORITHM"] + '_' + cfg["ER"]["ALGORITHM"] + '_' + cfg["ER"]["STRATEGY"]
+                capacity        = self.buffer_size,\
+                replay_n        = cfg["ER"]["REPLAY_N"],\
+                replay_strategy = cfg["ER"]["STRATEGY"],\
+                reward_func     = cfg["ER"]["REWARD_FUNC"],\
+                done_func       = cfg["ER"]["DONE_FUNC"])
 
         # Hyper-parameters for learning
         self.discount_factor = 0.99
@@ -53,16 +52,17 @@ class MDQNAgent:
         self.lo             = -1
         
         # Neural Network Architecture
-        self.model        = QNetwork(self.state_size, self.action_size, cfg["RL"]["NETWORK"])
-        self.target_model = QNetwork(self.state_size, self.action_size, cfg["RL"]["NETWORK"])
-        self.optimizer = tf.keras.optimizers.Adam(lr=self.learning_rate)
+        self.model          = get_q_network(self.state_size, self.action_size, cfg["RL"])
+        self.target_model   = get_q_network(self.state_size, self.action_size, cfg["RL"])
+        self.optimizer      = Adam(learning_rate=self.learning_rate)
+        self.model.summary()
         self.hard_update_target_model()
         
         # Miscellaneous
         self.show_media_info = False
         self.steps = 0
-        self.update_period = 2
-        self.interaction_period = 1
+        self.update_period = 200
+        # self.interaction_period = 1
         self.is_done = False
 
         print(self.filename)
@@ -75,7 +75,7 @@ class MDQNAgent:
             return random.randrange(self.action_size)
         else:
             state = tf.convert_to_tensor([state], dtype=tf.float32)
-            return np.argmax(self.model.predict(state))
+            return np.argmax(self.model(state))
         
     def remember(self, state, action, reward, next_state, done, goal=None):
         state       = np.array(state,       dtype=np.float32)
@@ -83,7 +83,6 @@ class MDQNAgent:
         reward      = np.array([reward],    dtype=np.float32)
         done        = np.array([done],      dtype=np.float32)
         next_state  = np.array(next_state,  dtype=np.float32)
-        self.is_done = done
         if self.er_type == "HER":
             goal        = np.array(goal,        dtype=np.float32)
             transition  = (state, action, reward, next_state, done, goal)
@@ -109,24 +108,24 @@ class MDQNAgent:
         elif self.er_type == "PER":
             mini_batch, idxs, is_weights = self.memory.sample(self.batch_size)
 
-        states      = tf.convert_to_tensor(np.array([sample[0] for sample in mini_batch]))
+        states      = tf.convert_to_tensor(np.array([sample[0]    for sample in mini_batch]))
         actions     = tf.convert_to_tensor(np.array([sample[1][0] for sample in mini_batch]))
-        rewards     = tf.convert_to_tensor(np.array([sample[2] for sample in mini_batch]))
-        next_states = tf.convert_to_tensor(np.array([sample[3] for sample in mini_batch]))
-        dones       = tf.convert_to_tensor(np.array([sample[4] for sample in mini_batch]))
+        rewards     = tf.convert_to_tensor(np.array([sample[2]    for sample in mini_batch]))
+        next_states = tf.convert_to_tensor(np.array([sample[3]    for sample in mini_batch]))
+        dones       = tf.convert_to_tensor(np.array([sample[4]    for sample in mini_batch]))
         
         if self.show_media_info == False:
             self.show_media_info = True
             print('Start to train, check batch shapes')
-            print('**** shape of mini_batch', np.shape(mini_batch),type(mini_batch))
-            print('**** shape of states', np.shape(states),type(states))
-            print('**** shape of actions', np.shape(actions),type(actions))
-            print('**** shape of rewards', np.shape(rewards),type(rewards))
-            print('**** shape of next_states', np.shape(next_states),type(next_states))
-            print('**** shape of dones', np.shape(dones),type(dones))
+            print('**** shape of mini_batch',   np.shape(mini_batch),   type(mini_batch))
+            print('**** shape of states',       np.shape(states),       type(states))
+            print('**** shape of actions',      np.shape(actions),      type(actions))
+            print('**** shape of rewards',      np.shape(rewards),      type(rewards))
+            print('**** shape of next_states',  np.shape(next_states),  type(next_states))
+            print('**** shape of dones',        np.shape(dones),        type(dones))
             if self.er_type == "HER":
                 goals = tf.convert_to_tensor(np.array([sample[5] for sample in mini_batch]))
-                print('**** shape of goals', np.shape(goals),type(goals))
+                print('**** shape of goals',    np.shape(goals),        type(goals))
 
         model_params = self.model.trainable_variables
         with tf.GradientTape() as tape:
@@ -182,10 +181,10 @@ class MDQNAgent:
         return loss
 
     def update_model(self,done = False):
-        # if self.steps % self.update_period != 0:
-        #     self.soft_update_target_model()
-        if done == True:
+        if self.steps % self.update_period != 0:
             self.hard_update_target_model()
+        # if done == True:
+        #     self.hard_update_target_model()
         return
 
     def load_model(self,at):

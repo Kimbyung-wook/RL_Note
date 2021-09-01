@@ -15,20 +15,12 @@ import gym
 import numpy as np
 import matplotlib.pyplot as plt
 from env_config  import env_configs
-from pys.agent.ddpg_agent   import DDPGAgent
-from pys.agent.td3_agent  import TD3Agent
-from pys.agent.sac_agent  import SACAgent
-
+from pys.agent.agent_broker import agent_broker
 from pys.gyms.functions import lunarlandercontinuous_done as done_function
 from pys.gyms.functions import lunarlandercontinuous_reward as reward_function
+from pys.utils.gpu_memory_limiter import gpu_memory_limiter
 
-import tensorflow as tf
-gpus = tf.config.experimental.list_physical_devices('GPU')
-if gpus:
-  try:
-    tf.config.experimental.set_virtual_device_configuration(gpus[0], [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=384)])
-  except RuntimeError as e:
-    print(e)
+gpu_memory_limiter(1024)
 
 lists = (
   # ('SAC','ER'), ('SAC','PER'), ('SAC','HER'),\
@@ -45,6 +37,7 @@ if __name__ == "__main__":
     "ENV":"MountainCarContinuous-v0",\
     "RL":{
       "ALGORITHM":item[0],\
+      "TYPE":(''),
       "NETWORK":{
         "ACTOR":[64,64],\
         "CRITIC":{
@@ -64,24 +57,24 @@ if __name__ == "__main__":
     "BATCH_SIZE":32,\
     "TRAIN_START":2000,\
     "MEMORY_SIZE":50000,\
+    "ADD_NAME":()
     }
     env_config = env_configs[cfg["ENV"]]
-    FILENAME = cfg["ENV"] + '_' + cfg["RL"]["ALGORITHM"] + '_' + cfg["ER"]["ALGORITHM"]
+    RL_NAME = cfg["RL"]["ALGORITHM"]
+    for item in cfg['RL']['TYPE']:
+      RL_NAME = RL_NAME + '_' + item
+    FILENAME = cfg["ENV"] + '_' + RL_NAME + '_' + cfg["ER"]["ALGORITHM"]
     if cfg["ER"]["ALGORITHM"] == "HER":
       FILENAME = FILENAME + '_' + cfg["ER"]["STRATEGY"]
-    FILENAME = FILENAME + '_' + cfg["ADD_NAME"]
-    EPISODES = env_config["EPISODES"]
+    for item in cfg["ADD_NAME"]:
+      FILENAME  = FILENAME + '_' + item
+    EPISODES  = env_config["EPISODES"]
     END_SCORE = env_config["END_SCORE"]
 
     # Define Environment
     env = gym.make(cfg["ENV"])
     # Define RL Agent
-    if cfg["RL"]["ALGORITHM"] == "DDPG":
-      agent = DDPGAgent(env, cfg)
-    elif cfg["RL"]["ALGORITHM"] == "TD3":
-      agent = TD3Agent(env, cfg)
-    elif cfg["RL"]["ALGORITHM"] == "SAC":
-      agent = SACAgent(env, cfg)
+    agent = agent_broker(rl=cfg["RL"]["ALGORITHM"], env=env, cfg=cfg)
 
     plt.clf()
     figure = plt.gcf()

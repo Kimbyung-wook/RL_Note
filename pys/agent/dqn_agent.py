@@ -49,15 +49,16 @@ class DQNAgent:
         self.tau            = 0.005
         
         # Neural Network Architecture
-        self.model          = QNetwork(self.state_size, self.action_size, cfg["RL"])
-        self.target_model   = QNetwork(self.state_size, self.action_size, cfg["RL"])
+        self.model          = get_q_network(self.state_size, self.action_size, cfg["RL"])
+        self.target_model   = get_q_network(self.state_size, self.action_size, cfg["RL"])
         self.optimizer      = Adam(learning_rate=self.learning_rate)
+        self.model.summary()
         self.hard_update_target_model()
         
         # Miscellaneous
         self.show_media_info = False
         self.steps = 0
-        self.update_period = 10
+        self.update_period = 200
         # self.interaction_period = 1
 
         print(self.filename)
@@ -154,10 +155,10 @@ class DQNAgent:
         return loss
 
     def update_model(self,done=False):
-        if done == True:
+        if self.steps % self.update_period != 0:
             self.hard_update_target_model()
-        # if self.steps % self.update_period != 0:
-        #     self.soft_update_target_model()
+        # if done == True:
+        #     self.hard_update_target_model()
         # return
 
     def load_model(self,at):
