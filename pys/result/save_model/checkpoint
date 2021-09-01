@@ -1,2 +1,2 @@
-model_checkpoint_path: "CartPole-v1_DQN_DUELING_PER_TF"
-all_model_checkpoint_paths: "CartPole-v1_DQN_DUELING_PER_TF"
+model_checkpoint_path: "CartPole-v1_MDQN_DUELING_ER_TF"
+all_model_checkpoint_paths: "CartPole-v1_MDQN_DUELING_ER_TF"

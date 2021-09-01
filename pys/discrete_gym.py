@@ -28,9 +28,9 @@ lists = (
     # ('DQN','ER','DUELING',),
     # ('DQN','PER','DUELING',),
     # ('MDQN','ER',''),
-    # ('MDQN','PER',''),
-    ('MDQN','ER','DUELING',),
-    ('MDQN','PER','DUELING',),
+    ('MDQN','PER',''),
+    # ('MDQN','ER','DUELING',),
+    # ('MDQN','PER','DUELING',),
   )
 print('Batch list : ',lists)
 

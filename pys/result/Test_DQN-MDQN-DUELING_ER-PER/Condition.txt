@@ -1,0 +1,14 @@
+DQN과 MDQN,
+Dueling 시의 비교
+ER-PER일 때의 비교
+
+학습 환경
+Cartpole-v1
+
+네트워크 구성과 ER 구성
+  "LAYER":[128,128],\
+  "BATCH_SIZE":128,\
+  "TRAIN_START":1000,\
+  "MEMORY_SIZE":50000,\
+
+타켓 네트워크 갱신 주기는 0.01 Hz (1 update per 100 steps)

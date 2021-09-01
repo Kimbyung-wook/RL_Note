@@ -208,3 +208,38 @@ class CNN4Network(tf.keras.Model):
             x = fc(x)
         q = self.out(x)
         return q
+
+
+def get_actor_cnn_mlp(state_space, action_space, cfg):
+  '''
+  if __name__ == '__main__':
+    cfg = {}
+    agent = get_actor_cnn_mlp(((64,32,4),4),4,cfg)
+    agent.summary()
+  '''
+  # Image Input
+  IN1   = Input(shape=state_space[0], name='Input_Image')
+  I     = IN1
+  I     = Conv2D(     filters=32, kernel_size=4,  strides=2, padding='valid', data_format='channels_last', name='Conv1', activation='relu')(I)
+  I     = MaxPool2D(              pool_size=4,    strides=2, padding='valid', data_format='channels_last', name='MaxPool1')(I)
+  I     = Conv2D(     filters=64, kernel_size=2,  strides=1, padding='valid', data_format='channels_last', name='Conv2', activation='relu')(I)
+  I     = Flatten()(I)
+
+  # Value Input
+  IN2   = Input(shape=state_space[1], name='Input_Value')
+  V     = IN2
+  V     = Dense(units=64, activation='relu',name='Dense1')(V)
+
+  # Signal Merger
+  M     = tf.concat([I, V],axis=1)
+  M     = Dense(units=64, activation='relu',name='Merge1')(M)
+  M     = Dense(units=64, activation='relu',name='Merge2')(M)
+  MU    = Dense(units=action_space, activation='linear', name='MU' )(M)
+  STD   = Dense(units=action_space, activation='linear', name='STD')(M)
+  OUT   = tf.concat([MU, STD],1)
+
+  IN    = [IN1, IN2]
+  model = Model(inputs = IN, outputs = OUT, name='ActorCNN+MLP')
+  model.build(input_shape = state_space)
+
+  return model

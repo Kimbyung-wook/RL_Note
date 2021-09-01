@@ -1,5 +1,6 @@
 import tensorflow as tf
-from tensorflow.keras.layers import Dense, concatenate, Lambda
+from tensorflow.keras import Model
+from tensorflow.keras.layers import Input, Dense, Concatenate
 
 class Actor(tf.keras.Model):
     def __init__(self, state_size, action_size, log_std_min, log_std_max,cfg):
@@ -39,12 +40,6 @@ class Critic(tf.keras.Model):
         for numbers in self.structure["CONCAT"]:
             layer = Dense(numbers,activation='relu')
             self.concat_layer.append(layer)
-        # self.s1 = Dense(16, activation='relu')
-        # self.s2 = Dense(32, activation='relu')
-        # self.a1 = Dense(32, activation='relu')
-        # self.a2 = Dense(32, activation='relu')
-        # self.fc1= Dense(64, activation='relu')
-        # self.fc2= Dense(64, activation='relu')
         self.out= Dense(1,  activation='linear')
 
     def call(self,state_action):
@@ -54,17 +49,24 @@ class Critic(tf.keras.Model):
             s = state_layer(s)
         for action_layer in self.action_layer:
             a = action_layer(a)
-        x = concatenate([s,a],axis=-1)
+        x = Concatenate([s,a],axis=-1)
         for concat_layer in self.concat_layer:
             x = concat_layer(x)
         q = self.out(x)
         
-        # s = self.s1(s)
-        # s = self.s2(s)
-        # a = self.a1(a)
-        # a = self.a2(a)
-        # x = concatenate([s,a],axis=-1)
-        # x = self.fc1(x)
-        # x = self.fc2(x)
-        # q = self.out(x)
         return q
+
+def get_actor_mlp(state_space, action_space, cfg):
+    structure = cfg['NETWORK']["LAYER"]
+    X_input = Input(shape=state_space)
+    X = X_input
+    for idx in range(len(structure)):
+        X = Dense(units=structure[idx], activation='relu',name='Layer'+str(idx))(X)
+    MU = Dense(units=action_space, activation='linear', name='mu')(X)
+    STD = Dense(units=action_space, activation='linear', name='mu')(X)
+    OUT = tf.concat([MU, STD])
+
+    model = Model(inputs = X_input, outputs = OUT, name='q_network')
+    model.build(input_shape = state_space)
+
+    return model
