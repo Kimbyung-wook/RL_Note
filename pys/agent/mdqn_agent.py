@@ -61,7 +61,7 @@ class MDQNAgent:
         # Miscellaneous
         self.show_media_info = False
         self.steps = 0
-        self.update_period = 200
+        self.update_period = 100
         # self.interaction_period = 1
         self.is_done = False
 
