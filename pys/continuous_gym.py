@@ -15,7 +15,7 @@ import gym
 import numpy as np
 import matplotlib.pyplot as plt
 from env_config  import env_configs
-from pys.agent.agent_broker import agent_broker
+from pys.agent.agent_broker import continuous_agent_broker
 from pys.gyms.functions import lunarlandercontinuous_done as done_function
 from pys.gyms.functions import lunarlandercontinuous_reward as reward_function
 from pys.utils.gpu_memory_limiter import gpu_memory_limiter
@@ -74,7 +74,7 @@ if __name__ == "__main__":
     # Define Environment
     env = gym.make(cfg["ENV"])
     # Define RL Agent
-    agent = agent_broker(rl=cfg["RL"]["ALGORITHM"], env=env, cfg=cfg)
+    agent = continuous_agent_broker(rl=cfg["RL"]["ALGORITHM"], env=env, cfg=cfg)
 
     plt.clf()
     figure = plt.gcf()
