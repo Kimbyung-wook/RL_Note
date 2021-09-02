@@ -6,7 +6,7 @@ env_configs = {
     },
     'LunarLander-v2':{
         'EPISODES':1000,
-        'END_SCORE':300
+        'END_SCORE':200
     },
     'MountainCar-v0':{
         'EPISODES':2000,

@@ -15,7 +15,7 @@ import gym
 import numpy as np
 import matplotlib.pyplot as plt
 from env_config  import env_configs
-from pys.agent.agent_broker import agent_broker
+from pys.agent.agent_broker import discrete_agent_broker
 from pys.gyms.functions import mountain_car_done as done_function
 from pys.gyms.functions import mountain_car_reward as reward_function
 from pys.utils.gpu_memory_limiter import gpu_memory_limiter
@@ -30,7 +30,7 @@ lists = (
     # ('MDQN','ER',''),
     ('MDQN','PER',''),
     # ('MDQN','ER','DUELING',),
-    # ('MDQN','PER','DUELING',),
+    ('MDQN','PER','DUELING',),
   )
 print('Batch list : ',lists)
 
@@ -38,13 +38,17 @@ if __name__ == "__main__":
   for item in lists:
     cfg = {\
       # "ENV":"Pong-v0",\
-      "ENV":"CartPole-v1",\
+      # "ENV":"CartPole-v1",\
+      "ENV":"LunarLander-v2",\
       # "ENV":"MountainCar-v0",\
       "RL":{
         "ALGORITHM":item[0],\
         "TYPE":(item[2],),
         "NETWORK":{
-          "LAYER":[128,128],\
+          "MLP":(
+            (128,'relu'),
+            (128,'relu'),
+          )
         }
       },\
       "ER":{
@@ -55,8 +59,8 @@ if __name__ == "__main__":
         "DONE_FUNC":done_function,\
       },\
       "BATCH_SIZE":128,\
-      "TRAIN_START":1000,\
-      "MEMORY_SIZE":50000,\
+      "TRAIN_START":2000,\
+      "MEMORY_SIZE":100000,\
       "ADD_NAME":()
     }
     env_config = env_configs[cfg["ENV"]]
@@ -74,7 +78,7 @@ if __name__ == "__main__":
     # Define Environment
     env = gym.make(cfg["ENV"])
     # Define RL Agent
-    agent = agent_broker(rl=cfg["RL"]["ALGORITHM"], env=env, cfg=cfg)
+    agent = discrete_agent_broker(rl=cfg["RL"]["ALGORITHM"], env=env, cfg=cfg)
 
     plt.clf()
     figure = plt.gcf()

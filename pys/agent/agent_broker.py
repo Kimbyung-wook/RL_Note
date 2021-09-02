@@ -5,14 +5,18 @@ from pys.agent.ddpg_agent import DDPGAgent
 from pys.agent.td3_agent  import TD3Agent
 from pys.agent.sac_agent  import SACAgent
 
-def agent_broker(rl:str, env, cfg):
-    if   rl == "DQN":   agent = DQNAgent(env, cfg)
-    elif rl == "A2C":   agent = A2CAgent(env, cfg)
+def discrete_agent_broker(rl:str, env, cfg):
+    if   rl == "DQN":   agent = DQNAgent( env, cfg)
+    elif rl == "A2C":   agent = A2CAgent( env, cfg)
     elif rl == "MDQN":  agent = MDQNAgent(env, cfg)
+    else:
+        Exception(rl + " is not exist")
 
-    elif rl == "DDPG":  agent = DDPGAgent(env, cfg)
-    elif rl == "TD3":   agent = TD3Agent(env, cfg)
-    elif rl == "SAC":   agent = SACAgent(env, cfg)
+    return agent
+def continuous_agent_broker(rl:str, env, cfg):
+    if   rl == "DDPG":  agent = DDPGAgent(env, cfg)
+    elif rl == "TD3":   agent = TD3Agent( env, cfg)
+    elif rl == "SAC":   agent = SACAgent( env, cfg)
     else:
         Exception(rl + " is not exist")
 

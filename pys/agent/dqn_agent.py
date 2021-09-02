@@ -6,7 +6,7 @@ from tensorflow.keras.optimizers import Adam
 from pys.utils.ER import ReplayMemory
 from pys.utils.PER import ProportionalPrioritizedMemory
 from pys.utils.HER import HindsightMemory
-from pys.model.q_network import QNetwork, get_q_network
+from pys.model.q_network import get_mlp_network
 
 class DQNAgent:
     def __init__(self, env:object, cfg:dict):
@@ -49,8 +49,8 @@ class DQNAgent:
         self.tau            = 0.005
         
         # Neural Network Architecture
-        self.model          = get_q_network(self.state_size, self.action_size, cfg["RL"])
-        self.target_model   = get_q_network(self.state_size, self.action_size, cfg["RL"])
+        self.model          = get_mlp_network(self.state_size, self.action_size, cfg["RL"])
+        self.target_model   = get_mlp_network(self.state_size, self.action_size, cfg["RL"])
         self.optimizer      = Adam(learning_rate=self.learning_rate)
         self.model.summary()
         self.hard_update_target_model()
