@@ -19,6 +19,7 @@ from pys.agent.agent_broker import continuous_agent_broker
 from pys.gyms.functions import lunarlandercontinuous_done as done_function
 from pys.gyms.functions import lunarlandercontinuous_reward as reward_function
 from pys.utils.gpu_memory_limiter import gpu_memory_limiter
+from configs.gym_model_cfg import *
 
 gpu_memory_limiter(1024)
 
@@ -29,41 +30,46 @@ lists = (
 )
 print('Batch list : ',lists)
 
+# ENV_NAME = "Pendulum-v0"
+ENV_NAME = "LunarLanderContinuous-v2"
+# ENV_NAME = "MountainCarContinuous-v0"
 if __name__ == "__main__":
+  # Define Environment
+  env = gym.make(ENV_NAME)
   for item in lists:
     cfg = {\
-    # "ENV":"Pendulum-v0",\
-    # "ENV":"LunarLanderContinuous-v2",\
-    "ENV":"MountainCarContinuous-v0",\
+    "ENV":{
+      "NAME":ENV_NAME,\
+      'STATE_SPACE':{
+        'STATE' : env.observation_space.shape
+        # 'IMG':(64,64,4),
+        # 'FEATURE':(4,),
+      },
+      # 'DEPTH_RANGE':(1.0,20.0),
+      # 'INIT_POSITION':(-20.0,0.0,0.0),
+    },
     "RL":{
-      "ALGORITHM":item[0],\
+      "ALGORITHM":'SAC',\
       "TYPE":(''),
-      "NETWORK":{
-        "ACTOR":[64,64],\
-        "CRITIC":{
-          "STATE":[16,32],\
-          "ACTION":[32,32],\
-          "CONCAT":[64,64]
-        }
-      }
+      "NETWORK":model_cfg_lunarlander_continuous
     },\
     "ER":{
-      "ALGORITHM":item[1],\
+      "ALGORITHM":'ER',\
       "REPLAY_N":8,\
       "STRATEGY":"EPISODE",\
       "REWARD_FUNC":reward_function,\
       "DONE_FUNC":done_function,\
     },\
     "BATCH_SIZE":32,\
-    "TRAIN_START":2000,\
+    "TRAIN_START":500,\
     "MEMORY_SIZE":50000,\
     "ADD_NAME":()
     }
-    env_config = env_configs[cfg["ENV"]]
+    env_config = env_configs[cfg["ENV"]['NAME']]
     RL_NAME = cfg["RL"]["ALGORITHM"]
     for item in cfg['RL']['TYPE']:
       RL_NAME = RL_NAME + '_' + item
-    FILENAME = cfg["ENV"] + '_' + RL_NAME + '_' + cfg["ER"]["ALGORITHM"]
+    FILENAME = cfg["ENV"]['NAME'] + '_' + RL_NAME + '_' + cfg["ER"]["ALGORITHM"]
     if cfg["ER"]["ALGORITHM"] == "HER":
       FILENAME = FILENAME + '_' + cfg["ER"]["STRATEGY"]
     for item in cfg["ADD_NAME"]:
@@ -71,8 +77,6 @@ if __name__ == "__main__":
     EPISODES  = env_config["EPISODES"]
     END_SCORE = env_config["END_SCORE"]
 
-    # Define Environment
-    env = gym.make(cfg["ENV"])
     # Define RL Agent
     agent = continuous_agent_broker(rl=cfg["RL"]["ALGORITHM"], env=env, cfg=cfg)
 
@@ -99,13 +103,16 @@ if __name__ == "__main__":
         action = agent.get_action(state)
         next_state, reward, done, info = env.step(action)
         agent.remember(state, action, reward, next_state, done, goal)
-        critic_loss, actor_loss = agent.train_model()
+        do_train, critic_loss, actor_loss, train_consuming_time = agent.train_model()
         agent.update_model(done)
         state = next_state
         # 
         score += reward
         critic_losses.append(critic_loss)
         actor_losses.append(actor_loss)
+        if do_train == True:
+          actor_losses.append(actor_loss)
+          critic_losses.append(critic_loss)
         if show_media_info:
           print("-------------- Variable shapes --------------")
           print("State Shape : ", np.shape(state))

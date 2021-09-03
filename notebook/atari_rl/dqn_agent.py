@@ -55,6 +55,7 @@ class DQNAgent():
     if ((np.random.rand() <= self.epsilon) or ()):
       return random.randrange(self.action_size)
     else:
+      state = state / 255.0 # scaling 0 ~ 1
       state = tf.convert_to_tensor([state], dtype=tf.float32)
       return np.argmax(self.model(state))
 
@@ -87,6 +88,7 @@ class DQNAgent():
     rewards     = tf.convert_to_tensor(np.array([sample[2] for sample in mini_batch]))
     next_states = tf.convert_to_tensor(np.array([sample[3] for sample in mini_batch]))
     dones       = tf.convert_to_tensor(np.array([sample[4] for sample in mini_batch]))
+    states = states / 255.0 # scaling 0 ~ 1
     
     if self.show_media_info == False:
       self.show_media_info = True

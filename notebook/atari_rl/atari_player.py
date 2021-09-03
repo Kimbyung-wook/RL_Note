@@ -25,7 +25,7 @@ if gpus:
   except RuntimeError as e:
     print(e)
 
-EPISODES = 10000
+EPISODES = 100000
 MAX_STEP_PER_EPISODE = 10000
 END_SCORE = 40
 SAVE_FREQ = 10
@@ -40,14 +40,14 @@ cfg = {\
       "ALGORITHM":'ER',
       "BATCH_SIZE":64,
       "TRAIN_START":10000,
-      "MEMORY_SIZE":100000,
+      "MEMORY_SIZE":200000,
     },
     "TRAIN_FREQ":4,
     "UPDATE_FREQ":2000,
   },
 }
 ENV_NAME = cfg['ENV']['NAME']
-FILENAME = cfg['ENV']['NAME'] + '_', cfg['RL']['ALGORITHM']
+FILENAME = ENV_NAME + '_', cfg['RL']['ALGORITHM']
 if __name__ == "__main__":
   # Log Setting
   dir_path = str(os.path.abspath('')) + '/result/' + datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
@@ -92,7 +92,7 @@ if __name__ == "__main__":
         summary_writer.add_scalar('epi/score', episode_score, e)
         summary_writer.add_scalar('epi/loss_mean', np.mean(loss_list), e)
         summary_writer.add_scalar('epi/epsilon', agent.epsilon, e)
-        if score_avg > END_SCORE:
+        if (score_avg > END_SCORE) or (e == (EPISODES - 1)):
           agent.save_model("")
           end = True
         break

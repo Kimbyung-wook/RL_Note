@@ -1,23 +1,41 @@
-from pys.agent.dqn_agent  import DQNAgent
-from pys.agent.mdqn_agent import MDQNAgent
-
-from pys.agent.ddpg_agent import DDPGAgent
-from pys.agent.td3_agent  import TD3Agent
-from pys.agent.sac_agent  import SACAgent
+from pys.agent.dqn_agent  import *
+from pys.agent.mdqn_agent import *
+from pys.agent.ddpg_agent import *
+from pys.agent.td3_agent  import *
+from pys.agent.sac_agent  import *
 
 def discrete_agent_broker(rl:str, env, cfg):
-    if   rl == "DQN":   agent = DQNAgent( env, cfg)
-    elif rl == "A2C":   agent = A2CAgent( env, cfg)
-    elif rl == "MDQN":  agent = MDQNAgent(env, cfg)
+  print('length ',len(cfg['ENV']['STATE_SPACE']))
+  agent = None
+  if   len(cfg['ENV']['STATE_SPACE']) == 1:
+    if   rl == "DQN":   agent = DQNAgent1( env, cfg)
+    elif rl == "A2C":   agent = A2CAgent1( env, cfg)
+    elif rl == "MDQN":  agent = MDQNAgent1(env, cfg)
     else:
         Exception(rl + " is not exist")
+  elif len(cfg['ENV']['STATE_SPACE']) == 2:
+    if   rl == "DQN":   agent = DQNAgent2( env, cfg)
+    elif rl == "A2C":   agent = A2CAgent2( env, cfg)
+    elif rl == "MDQN":  agent = MDQNAgent2(env, cfg)
+    else:
+        Exception(rl + " is not exist")
+  print('load : ',agent.get_name())
 
-    return agent
+  return agent
 def continuous_agent_broker(rl:str, env, cfg):
-    if   rl == "DDPG":  agent = DDPGAgent(env, cfg)
-    elif rl == "TD3":   agent = TD3Agent( env, cfg)
-    elif rl == "SAC":   agent = SACAgent( env, cfg)
+  print('length ',len(cfg['ENV']['STATE_SPACE']))
+  agent = None
+  if   len(cfg['ENV']['STATE_SPACE']) == 1:
+    if   rl == "DDPG":  agent = DDPGAgent1(env, cfg)
+    elif rl == "TD3":   agent = TD3Agent1( env, cfg)
+    elif rl == "SAC":   agent = SACAgent1( env, cfg)
     else:
-        Exception(rl + " is not exist")
+      Exception(rl + " is not exist")
+  elif len(cfg['ENV']['STATE_SPACE']) == 2:
+    if   rl == "DDPG":  agent = DDPGAgent2(env, cfg)
+    elif rl == "TD3":   agent = TD3Agent2( env, cfg)
+    elif rl == "SAC":   agent = SACAgent2( env, cfg)
+    else:
+      Exception(rl + " is not exist")
 
-    return agent
+  return agent
