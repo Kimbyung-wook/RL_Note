@@ -3,7 +3,45 @@ Tensorflow 2.4.0 기준으로 작동 확인했습니다.
 현재 SAC + HER 공부중입니다.
 개인 취미로 RNN + RL 을 해보고 싶습니다.
 
+## My file system
+
+* \notebook<br>
+There are executable jupyter notebook files they have all of the elements or are refered from \pys\*** <br>
+This directory is for proto-typing RL algorithms and neural network model.<br>
+실행 가능한 주파이터 노트북 파일이 있습니다. 파일들은 구성요소를 다 가지고 있거나 \pys\*** 등에 있는 파일들을 참조할 수 있습니다.<br>
+이 디렉토리는 강화학습 알고리즘과 신경망 모델을 미리 시험해보기 위해 있습니다.
+
+* \pys<br>
+There are python scripts about RL<br>
+RL consists of RL algorithm, neural network model, hyper-parameters etc...<br>
+There are executable jupyter notebook files for testing these module : discrete_gym.ipynb & continuous_gym.ipynb
+But it may not be possible to run it. because this repo is under development.<br>
+Recently, i made neural network model maker(NNMM), which is not totally tested. Testing of NNMM is been able in the file, the configuration file is at \pys\config<br>
+강화학습 관련 파이썬 스크립트로 구성되어있습니다.<br>
+ 강화학습이란게 강화학습 알고리즘, 신경망 모델, 초-매개변수 등으로 구성됩니다. 이러한 모듈들을 검증하기 위해, 실행 가능한 주파이터 노트푹 파일들이 있습니다. 근데 안 돌아갈 수도 있는데 전체적으로 개발 중이라서 그렇습니다. 최근에는 설정 파일을 읽어서 원하는 합성곱, 혹은 다중 퍼셉트론 레이어를 가지는 신경망 모델을 만들어주는 함수(network_maker.py)를 만들었는데 다 테스트는 못해봤네요. 신경망 생성 함수의 검증은 해당 파일에서, 혹은 \pys\config의 모델 설정 파일을 읽어서 만들 수 있습니다.
+
+* \pys\agent\ <br>
+There are the implementation of the RL algorithms<br>
+The agent is refered from neural network model(\pys\model\network_maker.py)<br>
+이건 강화학습 알고리즘의 구현입니다. 이는 신경망 모델을 참조하고 있습니다.
+
+* \pys\model\ <br>
+There are neural network maker<br>
+Originally, there were pre-defined neural network models. but it seems that that way to generate NN model is not efficiency, so i made a NN model maker.<br>
+여기는 신경망 모델을 만들어주는 함수가 있습니다.<br>
+원래 미리 정해진 신경망 모델이 있었는데, 이러한 신경망 생성 방법은 비효율적이라고 생각했습니다. 그래서 신경망 생성기를 만들었답니다?<br>
+특정 생성 문법을 지켜준다면 Q-network나 Actor-Critic network를 만들기가 수월하다.
+
+* \pys\utils\ <br>
+There are the utility files for RL (ER, PER, HER)<br>
+여기는 강화학습의 보조함수를 넣어두었다.
+<br>
+<br>
+<br>
+## Reference
+
 위 저장소는 다음을 참고했습니다.<br>
+This repo is refered from below repos<br>
 
 * General
 
@@ -34,28 +72,3 @@ https://github.com/takoika/PrioritizedExperienceReplay/blob/master/proportional.
 
 * Recurrent NN + RL <br>
 https://github.com/AntoineTheb/RNN-RL
-
-This repo is refered from below repos<br>
-
-## 파일 구조 설명
-
-notebook<br>
-jupyter notebook 파일로 되어있음. pys/utils 의 utility 파일을 사용한다.<br>
-대부분 pys를 개발하기 전에 prototyping을 위해서 jupyter notebook을 이용하여 개발하는 곳이다.
-
-pys : python 파일로 되어있음.<br>
-discrete_gym.py/ipynb과 continuous_gym.py/ipynb 을 실행하면 gym의 classic control 문제에 대해서 여러 강화학습 알고리즘을 적용해볼 수 있다.<br>
-*.py 파일은 강화학습 알고리즘이나 Experience replay 알고리즘에 대해서 Batch Execution을 통해 알고리즘에 대한 성능 비교를 할 수 있도록 하는 batch 파일이다.
-- agent <br>
-강화학습 알고리즘 모음
-- model <br>
-강화학습을 위한 심층신경망 클래스로 구성<br>
-사용자가 cfg파일을 통해서 심층신경망의 레이어 구조를 결정할 수 있음.
-- utils<br>
-python utility 파일로 구성. memory, noise 관련한 모듈<br>
-현재는 ER, PER, HER이 있으며, HER는 현재 수정 중
-- gyms <br>
-HER를 위해, done과 reward를 계산하는 함수를 넣음
-- result <br>
-환경, 강화학습 알고리즘을 선택하여 구동한 결과물을 모았다.<br>
-이는 결과 데이터인 data, 결과 이미지인 img, 학습된 신경망 save_model 이 있다.

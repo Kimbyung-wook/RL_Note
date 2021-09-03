@@ -24,12 +24,12 @@ gpu_memory_limiter(1024)
     
 lists = (
     # ('DQN','ER',''),
-    ('DQN','PER',''),
+    # ('DQN','PER',''),
     # ('DQN','ER','DUELING',),
-    ('DQN','PER','DUELING',),
-    # ('MDQN','ER',''),
+    # ('DQN','PER','DUELING',),
+    ('MDQN','ER',''),
     # ('MDQN','PER',''),
-    # ('MDQN','ER','DUELING',),
+    ('MDQN','ER','DUELING',),
     # ('MDQN','PER','DUELING',),
   )
 print('Batch list : ',lists)
