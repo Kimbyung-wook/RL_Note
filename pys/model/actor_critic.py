@@ -3,7 +3,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 import tensorflow as tf
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Input, Dense, Concatenate, concatenate
-from tensorflow.keras.layers import Conv2D, Flatten, MaxPool2D, BatchNormalization
+from tensorflow.keras.layers import Conv2D, Flatten, MaxPool2D, BatchNormalization, AveragePooling2D, SpatialDropout2D
 from tensorflow.keras.utils  import plot_model
 
 def get_actor_mlp(state_space, action_space, cfg):
@@ -62,7 +62,7 @@ def get_critic_mlp(state_space, action_space, cfg):
 
   return model
 
-def get_actor_cnn(state_space, action_space, cfg):
+def get_actor_cnn(state_space, action_space):
   IN  = Input(shape=state_space, name='Input_Image')
 
   # Image Input
@@ -89,7 +89,7 @@ def get_actor_cnn(state_space, action_space, cfg):
 
   return model
 
-def get_critic_cnn(state_space, action_space, cfg):
+def get_critic_cnn(state_space, action_space):
   S = Input(shape=state_space , name='Input_Image')
   A = Input(shape=action_space, name='Input_Action')
   IN  = [S, A]
@@ -121,7 +121,7 @@ def get_critic_cnn(state_space, action_space, cfg):
 
   return model
 
-def get_actor_cnn_mlp(state_space, action_space, cfg):
+def get_actor_cnn_mlp(state_space, action_space):
   '''
   model = get_actor_cnn_mlp(((64,32,4),4),4,cfg)
   '''
@@ -160,7 +160,7 @@ def get_actor_cnn_mlp(state_space, action_space, cfg):
 
   return model
 
-def get_critic_cnn_mlp(state_space, action_space, cfg):
+def get_critic_cnn_mlp(state_space, action_space):
   '''
   model = get_critic_cnn_mlp(((64,32,4),4),4,cfg)
   '''
@@ -201,6 +201,147 @@ def get_critic_cnn_mlp(state_space, action_space, cfg):
 
   return model
 
+def get_actor_cnn_mlp_network(state_space, action_space, cfg):
+
+  cfg={
+    'NETWORK' : {
+      'ACTOR' : {
+        'STATE1':{
+
+          
+        },
+        'STATE2':{
+
+        },
+        'CONCAT':{
+
+        }
+      }
+      'CNN':( # Name, kernel_size, strides, filters, Activation
+        ('Conv2D',8,4,32,'relu'),
+        ('MaxPool2D',3,1),
+        ('Dropout',0.1),
+        ('BN',),
+        ('Conv2D',4,2,64,'relu'),
+        ('AvgPool2D',3,1),
+        ('Conv2D',3,1,64,'relu'),
+      ),
+      'MLP':(
+        (64,'relu'),
+        (64,'relu'),
+        (64,'relu'),
+      )
+    },
+    'TYPE':'',
+  }
+  model = get_cnn_mlp_network((84,84,4),4,cfg)
+  model.summary()
+
+  actor_cnn_layer = cfg['NETWORK']["CNN"]
+  actor_mlp_layer = cfg['NETWORK']["MLP"]
+  S1  = Input(shape=state_space[0], name='Input_Image')
+  S2  = Input(shape=state_space[1], name='Input_Value')
+  IN  = [S1, S2]
+
+  # CNN Layers
+  S = IN
+  for idx, item in enumerate(cnn_layer):
+    if item[0] == 'Conv2D':
+      S = Conv2D(filters=item[3], kernel_size=item[1], strides=item[2], padding='valid', data_format='channels_last', name='Conv-'+str(idx+1), activation=item[4])(S)
+    elif item[0] == 'MaxPool2D': 
+      S = MaxPool2D(              pool_size=item[1],   strides=item[2], padding="valid", data_format="channels_last", name='MaxPool2D-'+str(idx+1))(S)
+    elif item[0] == 'AvgPool2D': 
+      S = AveragePooling2D(       pool_size=item[1],   strides=item[2], padding="valid", data_format="channels_last", name='AvgPool2D-'+str(idx+1))(S)
+    elif item[0] == 'BN':
+      S = BatchNormalization(axis=-1,     name='BN-'+str(idx+1))(S)
+    elif item[0] == 'Dropout':
+      S = SpatialDropout2D(rate=item[1],  name='Dropout-'+str(idx+1))(S)
+  S = Flatten()(S)
+
+  # MLP Layers
+  X = S
+  for idx, item in enumerate(mlp_layer):
+    X = Dense(units=item[0], activation=item[1],name='Layer-'+str(idx))(X)
+  A = Dense(units=action_space, activation='linear', name='Adv')(X)
+  if 'DUELING' in cfg['TYPE']:
+    V = Dense(units=1, activation='linear', name='Val')(X)
+    Q = tf.math.add(V, A, name='Add')
+    Q = tf.math.subtract(Q,tf.reduce_mean(A, axis=1, keepdims=True), name='Subtract')
+  else:
+    Q = A
+
+  model = Model(inputs = IN, outputs = Q, name='cnn_mlp_network')
+  model.build(input_shape = state_space)
+  dot_img_file = 'get_actor_cnn_mlp_network.png'
+  plot_model(model, to_file=dot_img_file,dpi=100,
+        show_shapes=True, show_dtype=True, show_layer_names=True,\
+  )
+  return model
+
+def get_critic_cnn_mlp_network(state_space, action_space, cfg):
+  '''
+  cfg={
+    'NETWORK':{
+      'CNN':(
+        # Name, kernel_size, strides, filters, Activation
+        ('Conv2D',8,4,32,'relu'),
+        ('MaxPool2D',3,1),
+        ('Dropout',0.1),
+        ('BN',),
+        ('Conv2D',4,2,64,'relu'),
+        ('AvgPool2D',3,1),
+        ('Conv2D',3,1,64,'relu'),
+      ),
+      'MLP':(
+        (64,'relu'),
+        (64,'relu'),
+        (64,'relu'),
+      )
+    },
+    'TYPE':'',
+  }
+  model = get_cnn_mlp_network((84,84,4),4,cfg)
+  model.summary()
+  '''
+  cnn_layer = cfg['NETWORK']["CNN"]
+  mlp_layer = cfg['NETWORK']["MLP"]
+  IN  = Input(shape=state_space, name='Input_Image')
+
+  # CNN Layers
+  S = IN
+  for idx, item in enumerate(cnn_layer):
+    if item[0] == 'Conv2D':
+      S = Conv2D(filters=item[3], kernel_size=item[1], strides=item[2], padding='valid', data_format='channels_last', name='Conv-'+str(idx+1), activation=item[4])(S)
+    elif item[0] == 'MaxPool2D': 
+      S = MaxPool2D(              pool_size=item[1],   strides=item[2], padding="valid", data_format="channels_last", name='MaxPool2D-'+str(idx+1))(S)
+    elif item[0] == 'AvgPool2D': 
+      S = AveragePooling2D(       pool_size=item[1],   strides=item[2], padding="valid", data_format="channels_last", name='AvgPool2D-'+str(idx+1))(S)
+    elif item[0] == 'BN':
+      S = BatchNormalization(axis=-1,     name='BN-'+str(idx+1))(S)
+    elif item[0] == 'Dropout':
+      S = SpatialDropout2D(rate=item[1],  name='Dropout-'+str(idx+1))(S)
+  S = Flatten()(S)
+
+  # MLP Layers
+  X = S
+  for idx, item in enumerate(mlp_layer):
+    X = Dense(units=item[0], activation=item[1],name='Layer-'+str(idx))(X)
+  A = Dense(units=action_space, activation='linear', name='Adv')(X)
+  if 'DUELING' in cfg['TYPE']:
+    V = Dense(units=1, activation='linear', name='Val')(X)
+    Q = tf.math.add(V, A, name='Add')
+    Q = tf.math.subtract(Q,tf.reduce_mean(A, axis=1, keepdims=True), name='Subtract')
+  else:
+    Q = A
+
+  model = Model(inputs = IN, outputs = Q, name='cnn_mlp_network')
+  model.build(input_shape = state_space)
+  # dot_img_file = 'visualize_model\get_cnn_mlp_network.png'
+  # plot_model(model, to_file=dot_img_file,dpi=100,
+  #       show_shapes=True, show_dtype=True, show_layer_names=True,\
+  # )
+  return model
+
 if __name__ == '__main__':
   
   cfg = {
@@ -221,3 +362,5 @@ if __name__ == '__main__':
 
   model = get_actor_cnn_mlp(((64,32,4),4),4,cfg)
   model = get_critic_cnn_mlp(((64,32,4),4),4,cfg)
+
+def get_network_loop(IN, architecture):
