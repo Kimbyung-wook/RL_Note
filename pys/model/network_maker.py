@@ -11,8 +11,10 @@ import numpy as np
 def network_maker1(state_space, action_space, cfg):
   structure   = cfg
   role        = cfg['NAME']
-  S      = Input(shape=state_space, name='Input_Image')
-  A      = Input(shape=action_space,name='Input_Action')
+  if type(action_space) is list or type(action_space) is tuple:
+    action_space = action_space[0]
+  S      = Input(shape=state_space, name='Input_State')
+  A      = Input(shape=(action_space,),name='Input_Action')
   if    role == 'ACTOR' or role == 'Q': IN  = S
   elif  role == 'CRITIC':               IN  = [S, A]
 
@@ -34,15 +36,15 @@ def network_maker1(state_space, action_space, cfg):
       M  = S
     elif role == 'CRITIC':
       M  = concatenate([S, A],axis=1)
-  if    role == 'Q':      OUT = Dense(units=action_space[0],  activation='linear',name='Output')(M)
+  if    role == 'Q':      OUT = Dense(units=action_space,  activation='linear',name='Output')(M)
   elif  role == 'CRITIC': OUT = Dense(units=1,                activation='linear',name='Output')(M)
   elif  role == 'ACTOR':
     if    cfg['ACTION_TYPE'] == 'DETERMINISTIC':
-      MU      = Dense(units=action_space[0], activation='linear',name='MU' )(M)
+      MU      = Dense(units=action_space, activation='linear',name='MU' )(M)
       OUT     = MU
     elif  cfg['ACTION_TYPE'] == 'STOCHASTIC':
-      MU      = Dense(units=action_space[0], activation='linear',name='MU' )(M)
-      LOG_STD = Dense(units=action_space[0], activation='linear',name='STD')(M)
+      MU      = Dense(units=action_space, activation='linear',name='MU' )(M)
+      LOG_STD = Dense(units=action_space, activation='linear',name='STD')(M)
       LOG_STD = tf.clip_by_value(LOG_STD, clip_value_min=cfg['LOG_MIN_MAX'][0], clip_value_max=cfg['LOG_MIN_MAX'][1], name='CLIPPING')
       STD     = tf.math.exp(LOG_STD, name='EXP')
       OUT = [MU, STD]
@@ -54,9 +56,11 @@ def network_maker1(state_space, action_space, cfg):
 def network_maker2(state_space, action_space, cfg):
   structure   = cfg
   role        = cfg['NAME']
+  if type(action_space) is list or type(action_space) is tuple:
+    action_space = action_space[0]
   S1     = Input(shape=state_space[0], name='Input_Image')
   S2     = Input(shape=state_space[1], name='Input_Value')
-  A      = Input(shape=action_space,   name='Input_Action')
+  A      = Input(shape=(action_space,),   name='Input_Action')
   if    role == 'ACTOR' or role == 'Q': IN  = [S1, S2]
   elif  role == 'CRITIC':               IN  = [S1, S2, A]
 
@@ -75,15 +79,15 @@ def network_maker2(state_space, action_space, cfg):
       elif role == 'CRITIC':
         M  = concatenate([S1, S2, A],axis=1)
       M = get_layers(M, key, item)
-  if    role == 'Q':      OUT = Dense(units=action_space[0],  activation='linear',name='Output')(M)
+  if    role == 'Q':      OUT = Dense(units=action_space,  activation='linear',name='Output')(M)
   elif  role == 'CRITIC': OUT = Dense(units=1,                activation='linear',name='Output')(M)
   elif  role == 'ACTOR':
     if    cfg['ACTION_TYPE'] == 'DETERMINISTIC':
-      MU      = Dense(units=action_space[0], activation='linear',name='MU' )(M)
+      MU      = Dense(units=action_space, activation='linear',name='MU' )(M)
       OUT     = MU
     elif  cfg['ACTION_TYPE'] == 'STOCHASTIC':
-      MU      = Dense(units=action_space[0], activation='linear',name='MU' )(M)
-      LOG_STD = Dense(units=action_space[0], activation='linear',name='STD')(M)
+      MU      = Dense(units=action_space, activation='linear',name='MU' )(M)
+      LOG_STD = Dense(units=action_space, activation='linear',name='STD')(M)
       LOG_STD = tf.clip_by_value(LOG_STD, clip_value_min=cfg['LOG_MIN_MAX'][0], clip_value_max=cfg['LOG_MIN_MAX'][1], name='CLIPPING')
       STD     = tf.math.exp(LOG_STD, name='EXP')
       OUT = [MU, STD]

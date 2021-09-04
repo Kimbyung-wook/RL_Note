@@ -8,18 +8,19 @@ pos = tmp1.find(tmp2)
 root_path = cwd[0:pos] + dir_name
 sys.path.append(root_path)
 print(root_path)
-workspace_path = root_path + "\\pys"
+workspace_path = root_path + '\pys'
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' 
 
 import gym
 import numpy as np
 import matplotlib.pyplot as plt
 from env_config  import env_configs
-from pys.agent.agent_broker import continuous_agent_broker
-from pys.gyms.functions import lunarlandercontinuous_done as done_function
-from pys.gyms.functions import lunarlandercontinuous_reward as reward_function
-from pys.utils.gpu_memory_limiter import gpu_memory_limiter
-from configs.gym_model_cfg import *
+from wrapper.gym_wrapper import GymWrapper
+from agent.agent_broker import continuous_agent_broker
+from gyms.functions import lunarlandercontinuous_done as done_function
+from gyms.functions import lunarlandercontinuous_reward as reward_function
+from utils.gpu_memory_limiter import gpu_memory_limiter
+from configs.nn_cfg import *
 
 gpu_memory_limiter(1024)
 
@@ -34,23 +35,21 @@ print('Batch list : ',lists)
 ENV_NAME = "LunarLanderContinuous-v2"
 # ENV_NAME = "MountainCarContinuous-v0"
 if __name__ == "__main__":
-  # Define Environment
-  env = gym.make(ENV_NAME)
   for item in lists:
     cfg = {\
     "ENV":{
       "NAME":ENV_NAME,\
-      'STATE_SPACE':{
-        'STATE' : env.observation_space.shape
-        # 'IMG':(64,64,4),
-        # 'FEATURE':(4,),
+      'STATE':{
+        # 'TYPE':('IMAGE',),
+        # 'STATE_SPACE':((84,84,4),()),
+        'TYPE':('ARRAY',),
       },
       # 'DEPTH_RANGE':(1.0,20.0),
       # 'INIT_POSITION':(-20.0,0.0,0.0),
     },
     "RL":{
-      "ALGORITHM":'SAC',\
-      "TYPE":(''),
+      "ALGORITHM":'TD3',\
+      "TYPE":('FIXED',),
       "NETWORK":model_cfg_lunarlander_continuous
     },\
     "ER":{
@@ -65,7 +64,6 @@ if __name__ == "__main__":
     "MEMORY_SIZE":50000,\
     "ADD_NAME":()
     }
-    env_config = env_configs[cfg["ENV"]['NAME']]
     RL_NAME = cfg["RL"]["ALGORITHM"]
     for item in cfg['RL']['TYPE']:
       RL_NAME = RL_NAME + '_' + item
@@ -74,9 +72,13 @@ if __name__ == "__main__":
       FILENAME = FILENAME + '_' + cfg["ER"]["STRATEGY"]
     for item in cfg["ADD_NAME"]:
       FILENAME  = FILENAME + '_' + item
+    env_config = env_configs[cfg["ENV"]['NAME']]
     EPISODES  = env_config["EPISODES"]
     END_SCORE = env_config["END_SCORE"]
 
+    # Define Environment
+    env = gym.make(ENV_NAME)
+    env = GymWrapper(env, cfg['ENV'])
     # Define RL Agent
     agent = continuous_agent_broker(rl=cfg["RL"]["ALGORITHM"], env=env, cfg=cfg)
 

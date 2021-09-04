@@ -61,11 +61,14 @@ class SACAgent1:
         self.target_actor   = network_maker1(self.state_size, self.action_size, cfg=cfg['RL']['NETWORK']['ACTOR'])
         self.log_alpha      = tf.math.log(0.2)
         self.alpha          = tf.math.exp(self.log_alpha)
-        self.target_entropy = -tf.convert_to_tensor(np.array(self.action_size,dtype=np.float32),dtype=tf.float32)
+        if 'FIXED' not in self.rl_type:
+            self.alpha          = tf.Variable(tf.exp(self.log_alpha), dtype=tf.float32)
+        self.target_entropy     = -tf.convert_to_tensor(np.array(self.action_size,dtype=np.float32),dtype=tf.float32)
         # Optimizer
         self.critic1_optimizer  = Adam(lr=self.critic_lr)
         self.critic2_optimizer  = Adam(lr=self.critic_lr)
         self.actor_optimizer    = Adam(lr=self.actor_lr)
+        self.alpha_optimizer    = Adam(lr=self.alpha_lr)
         self.hard_update_target_model()
 
         # Miscellaneous
@@ -178,23 +181,24 @@ class SACAgent1:
         # Update actor
         with tf.GradientTape() as tape:
             mu, std = self.actor(next_states,training=True)
-            new_actions, new_log_pi = self.eval_action(mu,std)
+            new_actions, new_log_prob = self.eval_action(mu,std)
             new_q1 = self.critic1([states, new_actions],training=True)
             new_q2 = self.critic2([states, new_actions],training=True)
             new_q_min   = tf.minimum(new_q1, new_q2)
-            actor_loss  = tf.reduce_mean(self.alpha * new_log_pi - new_q_min)
+            actor_loss  = tf.reduce_mean(self.alpha * new_log_prob - new_q_min)
         actor_loss_out = actor_loss.numpy()
         actor_params = self.actor.trainable_variables
         actor_grads = tape.gradient(actor_loss, actor_params)
         self.actor_optimizer.apply_gradients(zip(actor_grads, actor_params))
 
         # Update alpha
-        # with tf.GradientTape() as tape:
-        #     alpha_loss = - tf.reduce_mean(self.log_alpha * (new_log_pi + self.target_entropy))
-        # alpha_params = self.log_alpha
-        # alpha_grads = tape.gradient(alpha_loss, alpha_params)
-        # self.alpha_optimizer.apply_gradients(zip(alpha_grads, alpha_params))
-        # self.alpha = tf.math.exp(self.log_alpha)
+        if 'FIXED' not in self.rl_type:
+            with tf.GradientTape() as tape:
+                alpha_loss = - tf.reduce_mean(self.log_alpha * (new_log_prob + self.target_entropy))
+            alpha_params = self.log_alpha
+            alpha_grads = tape.gradient(alpha_loss, alpha_params)
+            self.alpha_optimizer.apply_gradients(zip(alpha_grads, alpha_params))
+            self.alpha = tf.math.exp(self.log_alpha)
 
         if self.er_type == "PER":
             sample_importance = np.squeeze(td_error.numpy())
