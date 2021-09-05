@@ -12,14 +12,14 @@ import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 from env_config  import env_configs
-from wrapper.gym_wrapper import GymWrapper
-from agent.agent_broker import continuous_agent_broker
-from utils.gpu_memory_limiter import gpu_memory_limiter
-from configs.nn_cfg import *
+from wrapper.gym_wrapper import GymWrapper              # Env Wrapper
+from agent.agent_broker import continuous_agent_broker  # Agent broker
+from utils.gpu_memory_limiter import gpu_memory_limiter # GPU 
+from configs.nn_cfg import *  # Network Model Configuration
 
-gpu_memory_limiter(1024)
+gpu_memory_limiter(1024*2)
 parser = argparse.ArgumentParser()
-parser.add_argument('--env_name', type=str,   default="LunarLanderContinuous-v2")
+parser.add_argument('--env_name', type=str,   default="MountainCarContinuous-v0")
 parser.add_argument('--train',    type=bool,  default=False)
 args = parser.parse_args()
 
@@ -60,8 +60,8 @@ if __name__ == "__main__":
       # "REWARD_FUNC":reward_function,\
       # "DONE_FUNC":done_function,\
     },\
-    "BATCH_SIZE":32,\
-    "TRAIN_START":500,\
+    "BATCH_SIZE":64,\
+    "TRAIN_START":2000,\
     "MEMORY_SIZE":50000,\
     "ADD_NAME":()
     }
