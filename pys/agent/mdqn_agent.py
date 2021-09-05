@@ -108,7 +108,7 @@ class MDQNAgent1:
             self.epsilon *= self.epsilon_decay
         # Sampling from the memory
         if self.er_type == "ER" or self.er_type == "HER":
-            mini_batch = self.memory.sample(self.batch_size)
+            mini_batch = self.memory.sample(self.batch_size); is_weights=None
         elif self.er_type == "PER":
             mini_batch, idxs, is_weights = self.memory.sample(self.batch_size)
 
@@ -173,7 +173,7 @@ class MDQNAgent1:
             
         grads = tape.gradient(loss, model_params)
         self.optimizer.apply_gradients(zip(grads, model_params))
-        
+
         if self.er_type == "PER":
             sample_importance = td_error.numpy()
             for i in range(self.batch_size):
@@ -230,7 +230,7 @@ class MDQNAgent1:
 ################################################################################################
 ################################################################################################
 
-class MDQNAgent1:
+class MDQNAgent2:
     def __init__(self, env:object, cfg:dict):
         self.state_size = (env.observation_space[0].shape, env.observation_space[1].shape)
         self.action_size= env.action_space.shape
@@ -386,10 +386,7 @@ class MDQNAgent1:
             
             # Compute loss
             td_error = targets - q
-            if self.er_type == "PER":
-                loss = tf.reduce_mean(is_weights * tf.square(targets - q))
-            else:
-                loss = tf.reduce_mean(tf.square(targets - q))
+            loss = self.get_loss(targets, q, is_weights)
             
         grads = tape.gradient(loss, model_params)
         self.optimizer.apply_gradients(zip(grads, model_params))
@@ -399,6 +396,19 @@ class MDQNAgent1:
             for i in range(self.batch_size):
                 self.memory.update(idxs[i], sample_importance[i])
 
+        return loss
+    
+    def get_loss(self, targets, q, is_weights=None):
+        if 'Q_penalty' in self.rl_type:
+            if self.er_type == "PER":
+                loss = tf.reduce_mean(is_weights *  tf.square(targets - q)  + 0.1 * tf.abs(q))
+            else:
+                loss = tf.reduce_mean(              tf.square(targets - q)  + 0.1 * tf.abs(q))
+        else:
+            if self.er_type == "PER":
+                loss = tf.reduce_mean(is_weights *  tf.square(targets - q))
+            else:
+                loss = tf.reduce_mean(              tf.square(targets - q))
         return loss
 
     def update_model(self,done = False):

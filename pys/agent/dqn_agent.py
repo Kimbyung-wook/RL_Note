@@ -127,13 +127,15 @@ class DQNAgent1:
 
         model_params = self.model.trainable_variables
         with tf.GradientTape() as tape:
+            tape.watch(model_params)
             # get q value
             q = self.model(states)
             one_hot_action = tf.one_hot(actions, self.action_size)
             q = tf.reduce_sum(one_hot_action * q, axis=1)
             q = tf.expand_dims(q,axis=1)
             # Target q and maximum target q
-            target_q = tf.stop_gradient(self.target_model(next_states))
+            # target_q = tf.stop_gradient(self.target_model(next_states))
+            target_q = self.target_model(next_states)
             if "DOUBLE" in self.rl_type: # Double Estimator
                 new_actions = np.argmax(self.model(next_states))
                 one_hot_action = tf.one_hot(new_actions, self.action_size)
@@ -336,10 +338,7 @@ class DQNAgent2:
             
             targets = rewards + (1 - dones) * self.discount_factor * max_q
             td_error = targets - q
-            if self.er_type == "PER":
-                loss = tf.reduce_mean(is_weights * tf.square(targets - q))
-            else:
-                loss = tf.reduce_mean(tf.square(targets - q))
+            loss = self.get_loss(targets, q, is_weights)
             
         grads = tape.gradient(loss, model_params)
         self.optimizer.apply_gradients(zip(grads, model_params))
@@ -349,6 +348,19 @@ class DQNAgent2:
             for i in range(self.batch_size):
                 self.memory.update(idxs[i], sample_importance[i])
 
+        return loss
+    
+    def get_loss(self, targets, q, is_weights=None):
+        if 'Q_penalty' in self.rl_type:
+            if self.er_type == "PER":
+                loss = tf.reduce_mean(is_weights *  tf.square(targets - q)  + 0.1 * tf.abs(q))
+            else:
+                loss = tf.reduce_mean(              tf.square(targets - q)  + 0.1 * tf.abs(q))
+        else:
+            if self.er_type == "PER":
+                loss = tf.reduce_mean(is_weights *  tf.square(targets - q))
+            else:
+                loss = tf.reduce_mean(              tf.square(targets - q))
         return loss
 
     def update_model(self,done=False):

@@ -23,17 +23,20 @@ parser.add_argument('--train',    type=str,   default='TRAIN')
 args = parser.parse_args()
     
 lists = (
-    # ('DQN', 'ER',('',),),
-    ('DQN','PER',('',),),
-    # ('DQN', 'ER',('DUELING',),),
-    # ('DQN','PER',('DUELING',),),
-    # ('DQN', 'ER',('Q_penalty',),),
-    # ('DQN','PER',('Q_penalty',),),
-    # ('DQN','PER',('DUELING','Q_penalty',),),
-    # ('MDQN','ER',''),
-    # ('MDQN','PER',''),
-    # ('MDQN','ER','DUELING',),
-    # ('MDQN','PER','DUELING',),
+    # ('DQN', 'ER',('',),),  # SUCCESS
+    # ('DQN','PER',('',),), # FAILURE
+    ('DQN','PER',('DOUBLE',),), # FAILURE
+    # ('DQN', 'ER',('DUELING',),), # SUCCESS
+    # ('DQN','PER',('DUELING',),), # SUCCESS
+    # ('DQN', 'ER',('Q_penalty',),), # 
+    # ('DQN','PER',('Q_penalty',),), # FAILURE
+    # ('DQN','PER',('DUELING','Q_penalty',),), # SUCCESS
+    # ('MDQN', 'ER',('',),),
+    # ('MDQN','PER',('',),), # SUCCESS
+    # ('MDQN', 'ER',('DUELING',),), # SUCCESS
+    # ('MDQN','PER',('DUELING',),), # SUCCESS
+    # ('MDQN', 'PER',('DUELING',),), # SUCCESS
+    # ('MDQN','PER',('Q_penalty',),), # SUCCESS
   )
 print('Batch list : ',lists)
 print(args.train)

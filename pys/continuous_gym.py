@@ -20,14 +20,17 @@ from configs.nn_cfg import *  # Network Model Configuration
 gpu_memory_limiter(1024*2)
 parser = argparse.ArgumentParser()
 parser.add_argument('--env_name', type=str,   default="MountainCarContinuous-v0")
-parser.add_argument('--train',    type=bool,  default=False)
+parser.add_argument('--train',    type=str,   default='TRAIN')
 args = parser.parse_args()
 
 lists = (
   # ('SAC','ER'), ('SAC','PER'), ('SAC','HER'),\
   # ('TD3','ER'), ('TD3','PER'), ('TD3','HER'),\
   # ('DDPG','ER'),('DDPG','PER'), ('DDPG','HER'),\
-  ('SAC','ER',),
+  # ('DDPG', 'ER',('',),), # 
+  # ('DDPG', 'PER',('',),), # 
+  # ('SAC', 'ER',('FIXED',),),
+  ('SAC','PER',('FIXED',),),
 )
 print('Batch list : ',lists)
 
@@ -50,7 +53,7 @@ if __name__ == "__main__":
     },
     "RL":{
       "ALGORITHM":item[0],\
-      "TYPE":('FIXED',),
+      "TYPE":item[2],
       "NETWORK":classic_continuous_cfg
     },\
     "ER":{
@@ -60,7 +63,7 @@ if __name__ == "__main__":
       # "REWARD_FUNC":reward_function,\
       # "DONE_FUNC":done_function,\
     },\
-    "BATCH_SIZE":64,\
+    "BATCH_SIZE":8,\
     "TRAIN_START":2000,\
     "MEMORY_SIZE":50000,\
     "ADD_NAME":()
@@ -95,7 +98,7 @@ if __name__ == "__main__":
     show_media_info = True
     goal = np.array([1.0,0.0,0.0])
 
-    if args.train == True:
+    if args.train.upper() == 'TRAIN':
       for e in range(EPISODES):
         done = False
         score = 0
@@ -177,7 +180,7 @@ if __name__ == "__main__":
           np.save(workspace_path + "\\result\\data\\" + FILENAME + "_TF_losses",losses)
           break
 
-    else: # Test
+    elif args.train.upper() == 'TEST': # Test
       agent.load_model(workspace_path + "\\result\\save_model\\")
       for e in range(10):
         # Episode initialization
