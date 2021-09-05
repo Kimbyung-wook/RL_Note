@@ -1,2 +1,2 @@
-model_checkpoint_path: "LunarLander-v2_DQN__PER_TF"
-all_model_checkpoint_paths: "LunarLander-v2_DQN__PER_TF"
+model_checkpoint_path: "LunarLander-v2_DQN_DUELING_Q_penalty_PER_TF"
+all_model_checkpoint_paths: "LunarLander-v2_DQN_DUELING_Q_penalty_PER_TF"

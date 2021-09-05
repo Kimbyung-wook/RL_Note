@@ -1,45 +1,44 @@
-# Find RL_Note path and append sys path
 import os, sys
-cwd = os.getcwd()
+from utils.set_path import set_path
 dir_name = 'RL_Note'
-tmp1 = cwd.lower()
-tmp2 = dir_name.lower()
-pos = tmp1.find(tmp2)
-root_path = cwd[0:pos] + dir_name
-sys.path.append(root_path)
+root_path = set_path(dir_name)
 print(root_path)
 workspace_path = root_path + '\pys'
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' 
 
 import gym
+import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 from env_config  import env_configs
 from wrapper.gym_wrapper import GymWrapper
 from agent.agent_broker import discrete_agent_broker
-from gyms.functions import mountain_car_done as done_function
-from gyms.functions import mountain_car_reward as reward_function
 from utils.gpu_memory_limiter import gpu_memory_limiter
 from configs.nn_cfg import *
-
 gpu_memory_limiter(1024)
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--env_name', type=str,   default="LunarLander-v2")
+parser.add_argument('--train',    type=bool,  default=False)
+args = parser.parse_args()
     
 lists = (
-    # ('DQN','ER',''),
+    ('DQN','ER',''),
     # ('DQN','PER',''),
     # ('DQN','ER','DUELING',),
     # ('DQN','PER','DUELING',),
-    ('MDQN','ER',''),
+    # ('MDQN','ER',''),
     # ('MDQN','PER',''),
-    ('MDQN','ER','DUELING',),
+    # ('MDQN','ER','DUELING',),
     # ('MDQN','PER','DUELING',),
   )
 print('Batch list : ',lists)
 
 # ENV_NAME="Pong-v0"
 # ENV_NAME="MountainCar-v0"
-ENV_NAME="LunarLander-v2"
+# ENV_NAME="LunarLander-v2"
 # ENV_NAME="CartPole-v1"
+ENV_NAME = args.env_name
 if __name__ == "__main__":
   for item in lists:
     cfg = {\
@@ -53,15 +52,16 @@ if __name__ == "__main__":
       },
       "RL":{
         "ALGORITHM":item[0],\
-        "TYPE":(item[2],),
-        "NETWORK":classic_cfg
+        "TYPE":(item[2]),
+        # "TYPE":(item[2],'Q_penalty'),
+        "NETWORK":classic_discrete_cfg
       },
       "ER":{
         "ALGORITHM":item[1],\
         "REPLAY_N":8,\
         "STRATEGY":"EPISODE",\
-        "REWARD_FUNC":reward_function,\
-        "DONE_FUNC":done_function,\
+        # "REWARD_FUNC":reward_function,\
+        # "DONE_FUNC":done_function,\
       },\
       "BATCH_SIZE":128,\
       "TRAIN_START":2000,\
@@ -98,79 +98,96 @@ if __name__ == "__main__":
     show_media_info = True
     goal = (0.5,0.0)
     
-    for e in range(EPISODES):
-      # Episode initialization
-      done = False
-      score = 0
-      loss_list = []
-      state = env.reset()
-      while not done:
-        # if e%100 == 0: env.render()
-        # Interact with env.
-        action = agent.get_action(state)
-        next_state, reward, done, info = env.step(action)
-        agent.remember(state, action, reward, next_state, done, goal)
-        loss = agent.train_model()
-        agent.update_model(done)
-        state = next_state
-        # 
-        score += reward
-        loss_list.append(loss)
-        global_steps += 1
-        if show_media_info:
-          print("-------------- Variable shapes --------------")
-          print("State Shape : ", np.shape(state))
-          print("Action Shape : ", np.shape(action))
-          print("Reward Shape : ", np.shape(reward))
-          print("done Shape : ", np.shape(done))
-          print("---------------------------------------------")
-          show_media_info = False
-        if done:
-          score_avg = 0.9 * score_avg + 0.1 * score if score_avg != 0 else score
-          print("episode: {0:3d} | score avg: {1:3.2f} | mem size {2:6d} |"
-            .format(e, score_avg, len(agent.memory)))
+    if args.train == True:
+      for e in range(EPISODES):
+        # Episode initialization
+        done = False
+        score = 0
+        loss_list = []
+        state = env.reset()
+        while not done:
+          # if e%100 == 0: env.render()
+          # Interact with env.
+          action = agent.get_action(state)
+          next_state, reward, done, info = env.step(action)
+          agent.remember(state, action, reward, next_state, done, goal)
+          loss = agent.train_model()
+          agent.update_model(done)
+          state = next_state
+          # 
+          score += reward
+          loss_list.append(loss)
+          global_steps += 1
+          if show_media_info:
+            print("-------------- Variable shapes --------------")
+            print("State Shape : ", np.shape(state))
+            print("Action Shape : ", np.shape(action))
+            print("Reward Shape : ", np.shape(reward))
+            print("done Shape : ", np.shape(done))
+            print("---------------------------------------------")
+            show_media_info = False
+          if done:
+            score_avg = 0.9 * score_avg + 0.1 * score if score_avg != 0 else score
+            print("episode: {0:3d} | score avg: {1:3.2f} | mem size {2:6d} |"
+              .format(e, score_avg, len(agent.memory)))
 
-          scores_avg.append(score_avg)
-          scores_raw.append(score)
-          epsilons.append(agent.epsilon)
-          losses.append(np.mean(loss_list))
-          if e % save_freq == 0:
-            plt.clf()
-            plt.subplot(311)
-            plt.plot(scores_avg, 'b')
-            plt.plot(scores_raw, 'b', alpha=0.8, linewidth=0.5)
-            plt.xlabel('episode'); plt.ylabel('average score'); plt.grid()
-            plt.title(FILENAME)
-            plt.subplot(312)
-            plt.plot(epsilons, 'b')
-            plt.xlabel('episode'); plt.ylabel('epsilon'); plt.grid()
-            plt.subplot(313)
-            plt.plot(losses, 'b')
-            plt.xlabel('episode'); plt.ylabel('losses') ;plt.grid()
-            plt.savefig(workspace_path + "\\result\\img\\" + FILENAME + "_TF.jpg", dpi=100)
+            scores_avg.append(score_avg)
+            scores_raw.append(score)
+            epsilons.append(agent.epsilon)
+            losses.append(np.mean(loss_list))
+            if e % save_freq == 0:
+              plt.clf()
+              plt.subplot(311)
+              plt.plot(scores_avg, 'b')
+              plt.plot(scores_raw, 'b', alpha=0.8, linewidth=0.5)
+              plt.xlabel('episode'); plt.ylabel('average score'); plt.grid()
+              plt.title(FILENAME)
+              plt.subplot(312)
+              plt.plot(epsilons, 'b')
+              plt.xlabel('episode'); plt.ylabel('epsilon'); plt.grid()
+              plt.subplot(313)
+              plt.plot(losses, 'b')
+              plt.xlabel('episode'); plt.ylabel('losses') ;plt.grid()
+              plt.savefig(workspace_path + "\\result\\img\\" + FILENAME + "_TF.jpg", dpi=100)
 
-          # 이동 평균이 0 이상일 때 종료
-          if score_avg > END_SCORE:
-            agent.save_model(workspace_path + "\\result\\save_model\\")
-            plt.clf()
-            plt.subplot(311)
-            plt.plot(scores_avg, 'b')
-            plt.plot(scores_raw, 'b', alpha=0.8, linewidth=0.5)
-            plt.xlabel('episode'); plt.ylabel('average score'); plt.grid()
-            plt.title(FILENAME)
-            plt.subplot(312)
-            plt.plot(epsilons, 'b')
-            plt.xlabel('episode'); plt.ylabel('epsilon'); plt.grid()
-            plt.subplot(313)
-            plt.plot(losses, 'b')
-            plt.xlabel('episode'); plt.ylabel('losses') ;plt.grid()
-            plt.savefig(workspace_path + "\\result\\img\\" + FILENAME + "_TF.jpg", dpi=100)
-            end = True
-            break
-      if end == True:
-        env.close()
-        np.save(workspace_path + "\\result\\data\\" + FILENAME + "_TF_scores_avg",scores_avg)
-        np.save(workspace_path + "\\result\\data\\" + FILENAME + "_TF_scores_raw",scores_raw)
-        np.save(workspace_path + "\\result\\data\\" + FILENAME + "_TF_losses",losses)
-        print("End")
-        break
+            # 이동 평균이 0 이상일 때 종료
+            if score_avg > END_SCORE:
+              agent.save_model(workspace_path + "\\result\\save_model\\")
+              plt.clf()
+              plt.subplot(311)
+              plt.plot(scores_avg, 'b')
+              plt.plot(scores_raw, 'b', alpha=0.8, linewidth=0.5)
+              plt.xlabel('episode'); plt.ylabel('average score'); plt.grid()
+              plt.title(FILENAME)
+              plt.subplot(312)
+              plt.plot(epsilons, 'b')
+              plt.xlabel('episode'); plt.ylabel('epsilon'); plt.grid()
+              plt.subplot(313)
+              plt.plot(losses, 'b')
+              plt.xlabel('episode'); plt.ylabel('losses') ;plt.grid()
+              plt.savefig(workspace_path + "\\result\\img\\" + FILENAME + "_TF.jpg", dpi=100)
+              end = True
+              break
+        if end == True:
+          np.save(workspace_path + "\\result\\data\\" + FILENAME + "_TF_scores_avg",scores_avg)
+          np.save(workspace_path + "\\result\\data\\" + FILENAME + "_TF_scores_raw",scores_raw)
+          np.save(workspace_path + "\\result\\data\\" + FILENAME + "_TF_losses",losses)
+          break
+    
+    else: # Test
+      agent.load_model(workspace_path + "\\result\\save_model\\")
+      for e in range(10):
+        # Episode initialization
+        done = False; state = env.reset(); score = 0
+        while not done:
+          env.render()
+          action = agent.get_action(state)
+          next_state, reward, done, info = env.step(action)
+          score += reward
+          state = next_state
+          if done:
+            score_avg = 0.9 * score_avg + 0.1 * score if score_avg != 0 else score
+            print("episode: {0:3d} | score avg: {1:3.2f} |"
+              .format(e, score_avg))
+    env.close()
+    print("End")

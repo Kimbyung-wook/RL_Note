@@ -214,6 +214,7 @@ class SACAgent1:
         return
 
     def load_model(self,at):
+        print(at + self.filename)
         self.actor.load_weights(  at + self.filename + "_TF_actor")
         self.critic1.load_weights(at + self.filename + "_TF_critic1")
         self.critic2.load_weights(at + self.filename + "_TF_critic2")

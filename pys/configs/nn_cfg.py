@@ -1,17 +1,15 @@
 from collections import OrderedDict
 
 cfg0={
-  'NETWORK':{
-    'MLP': OrderedDict([
-      ('NAME','Q'),
-      ('STATE', OrderedDict([
-        ('MLP',(
-            (64,'relu'),
-            (64,'relu'),
-        ))
-      ])),
-    ])
-  }
+  'MLP': OrderedDict([
+  ('NAME','Q'),
+  ('STATE', OrderedDict([
+    ('MLP',(
+        (64,'relu'),
+        (64,'relu'),
+    ))
+  ])),
+  ])
 }
 cfg1={
   'NETWORK':{
@@ -43,50 +41,50 @@ cfg1={
   }
 }
 
-classic_cfg={
+classic_discrete_cfg={
   'MLP': OrderedDict([
-    ('NAME','Q'),
-    ('STATE', OrderedDict([
-      ('MLP',(
-          (64,'relu'),
-          (64,'relu'),
-      ))
-    ])),
+  ('NAME','Q'),
+  ('STATE', OrderedDict([
+    ('MLP',(
+        (128,'relu'),
+        (128,'relu'),
+    ))
+  ])),
   ])
 }
 
-model_cfg_lunarlander_continuous={
+classic_continuous_cfg={
   'ACTOR': OrderedDict([
-    ('NAME','ACTOR'),
-    # ('ACTION_TYPE','DETERMINISTIC'),
-    ('ACTION_TYPE','STOCHASTIC'),
-    ('LOG_MIN_MAX',[-5,20]),
-    ('STATE', OrderedDict([
-      ('MLP',(
-          (16,'relu'),
-          (16,'relu'),
-      ))
-    ])),
+  ('NAME','ACTOR'),
+  # ('ACTION_TYPE','DETERMINISTIC'),
+  ('ACTION_TYPE','STOCHASTIC'),
+  ('LOG_MIN_MAX',[-5,20]),
+  ('STATE', OrderedDict([
+    ('MLP',(
+        (32,'relu'),
+        (32,'relu'),
+    ))
+  ])),
   ]),
   'CRITIC': OrderedDict([
-    ('NAME','CRITIC'),
-    ('STATE', OrderedDict([
-      ('MLP',(
-          (16,'relu'),
-          (16,'relu'),
-      ))
-    ])),
-    ('ACTION', OrderedDict([
-      ('MLP',(
-          (16,'relu'),
-          (16,'relu'),
-      ))
-    ])),
-    ('MERGE', OrderedDict([
-      ('MLP',(
-          (16,'relu'),
-          (16,'relu'),
-      ))
-    ]))
+  ('NAME','CRITIC'),
+  ('STATE', OrderedDict([
+    ('MLP',(
+        (16,'relu'),
+        (16,'relu'),
+    ))
+  ])),
+  ('ACTION', OrderedDict([
+    ('MLP',(
+        (16,'relu'),
+        (16,'relu'),
+    ))
+  ])),
+  ('MERGE', OrderedDict([
+    ('MLP',(
+        (32,'relu'),
+        (32,'relu'),
+    ))
+  ]))
   ]),
 }

@@ -98,7 +98,7 @@ class DQNAgent1:
             self.epsilon *= self.epsilon_decay
         # Sampling from the memory
         if self.er_type == "ER" or self.er_type == "HER":
-            mini_batch = self.memory.sample(self.batch_size)
+            mini_batch = self.memory.sample(self.batch_size); is_weights=None
         elif self.er_type == "PER":
             mini_batch, idxs, is_weights = self.memory.sample(self.batch_size)
 
@@ -140,10 +140,7 @@ class DQNAgent1:
             
             targets = rewards + (1 - dones) * self.discount_factor * max_q
             td_error = targets - q
-            if self.er_type == "PER":
-                loss = tf.reduce_mean(is_weights * tf.square(targets - q))
-            else:
-                loss = tf.reduce_mean(tf.square(targets - q))
+            loss = self.get_loss(targets, q, is_weights)
             
         grads = tape.gradient(loss, model_params)
         self.optimizer.apply_gradients(zip(grads, model_params))
@@ -153,6 +150,19 @@ class DQNAgent1:
             for i in range(self.batch_size):
                 self.memory.update(idxs[i], sample_importance[i])
 
+        return loss
+    
+    def get_loss(self, targets, q, is_weights=None):
+        if 'Q_penalty' in self.rl_type:
+            if self.er_type == "PER":
+                loss = tf.reduce_mean(is_weights *  tf.square(targets - q)  + 0.1 * tf.abs(q))
+            else:
+                loss = tf.reduce_mean(              tf.square(targets - q)  + 0.1 * tf.abs(q))
+        else:
+            if self.er_type == "PER":
+                loss = tf.reduce_mean(is_weights *  tf.square(targets - q))
+            else:
+                loss = tf.reduce_mean(              tf.square(targets - q))
         return loss
 
     def update_model(self,done=False):
