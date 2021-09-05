@@ -17,7 +17,7 @@ class DQNAgent1:
         self.rl_type    = cfg["RL"]['TYPE']
         self.er_type    = cfg["ER"]["ALGORITHM"].upper()
         rl_name = cfg["RL"]["ALGORITHM"]
-        for item in cfg['RL']['TYPE']:
+        for item in self.rl_type:
             rl_name = rl_name + '_' + item
         self.filename   = self.env_name + '_' + rl_name + '_' + self.er_type
         if cfg["ER"]["ALGORITHM"] == "HER":
@@ -73,6 +73,10 @@ class DQNAgent1:
         else:
             state = tf.convert_to_tensor([state], dtype=tf.float32)
             return np.argmax(self.model(state))
+            
+    def choose_action(self, state):
+        state = tf.convert_to_tensor([state], dtype=tf.float32)
+        return np.argmax(self.model(state))
         
     def remember(self, state, action, reward, next_state, done, goal=None):
         state       = np.array(state,       dtype=np.float32)
@@ -209,7 +213,7 @@ class DQNAgent2:
         self.rl_type    = cfg["RL"]['TYPE']
         self.er_type    = cfg["ER"]["ALGORITHM"].upper()
         rl_name = cfg["RL"]["ALGORITHM"]
-        for item in cfg['RL']['TYPE']:
+        for item in self.rl_type:
             rl_name = rl_name + '_' + item
         self.filename   = self.env_name + '_' + rl_name + '_' + self.er_type
         if cfg["ER"]["ALGORITHM"] == "HER":

@@ -76,7 +76,11 @@ class MDQNAgent1:
         else:
             state = tf.convert_to_tensor([state], dtype=tf.float32)
             return np.argmax(self.model(state))
-        
+
+    def choose_action(self,state):
+        state = tf.convert_to_tensor([state], dtype=tf.float32)
+        return np.argmax(self.model(state))
+    
     def remember(self, state, action, reward, next_state, done, goal=None):
         state       = np.array(state,       dtype=np.float32)
         action      = np.array([action])
@@ -165,10 +169,7 @@ class MDQNAgent1:
             
             # Compute loss
             td_error = targets - q
-            if self.er_type == "PER":
-                loss = tf.reduce_mean(is_weights * tf.square(targets - q))
-            else:
-                loss = tf.reduce_mean(tf.square(targets - q))
+            loss = self.get_loss(targets, q, is_weights)
             
         grads = tape.gradient(loss, model_params)
         self.optimizer.apply_gradients(zip(grads, model_params))
@@ -178,6 +179,19 @@ class MDQNAgent1:
             for i in range(self.batch_size):
                 self.memory.update(idxs[i], sample_importance[i])
 
+        return loss
+    
+    def get_loss(self, targets, q, is_weights=None):
+        if 'Q_penalty' in self.rl_type:
+            if self.er_type == "PER":
+                loss = tf.reduce_mean(is_weights *  tf.square(targets - q)  + 0.1 * tf.abs(q))
+            else:
+                loss = tf.reduce_mean(              tf.square(targets - q)  + 0.1 * tf.abs(q))
+        else:
+            if self.er_type == "PER":
+                loss = tf.reduce_mean(is_weights *  tf.square(targets - q))
+            else:
+                loss = tf.reduce_mean(              tf.square(targets - q))
         return loss
 
     def update_model(self,done = False):

@@ -19,21 +19,24 @@ from configs.nn_cfg import *  # Network Model Configuration
 gpu_memory_limiter(1024)
 parser = argparse.ArgumentParser()
 parser.add_argument('--env_name', type=str,   default="CartPole-v1")
-parser.add_argument('--train',    type=bool,  default=False)
+parser.add_argument('--train',    type=str,   default='TRAIN')
 args = parser.parse_args()
     
 lists = (
-    # ('DQN','ER',''),
-    ('DQN','PER',''),
-    # ('DQN','ER','DUELING',),
-    # ('DQN','PER','DUELING',),
+    # ('DQN', 'ER',('',),),
+    ('DQN','PER',('',),),
+    # ('DQN', 'ER',('DUELING',),),
+    # ('DQN','PER',('DUELING',),),
+    # ('DQN', 'ER',('Q_penalty',),),
+    # ('DQN','PER',('Q_penalty',),),
+    # ('DQN','PER',('DUELING','Q_penalty',),),
     # ('MDQN','ER',''),
     # ('MDQN','PER',''),
     # ('MDQN','ER','DUELING',),
     # ('MDQN','PER','DUELING',),
   )
 print('Batch list : ',lists)
-
+print(args.train)
 # ENV_NAME="Pong-v0"
 # ENV_NAME="MountainCar-v0"
 # ENV_NAME="LunarLander-v2"
@@ -52,7 +55,7 @@ if __name__ == "__main__":
       },
       "RL":{
         "ALGORITHM":item[0],\
-        "TYPE":(item[2]),
+        "TYPE":item[2],
         # "TYPE":(item[2],'Q_penalty'),
         "NETWORK":classic_discrete_cfg
       },
@@ -63,7 +66,7 @@ if __name__ == "__main__":
         # "REWARD_FUNC":reward_function,\
         # "DONE_FUNC":done_function,\
       },\
-      "BATCH_SIZE":128,\
+      "BATCH_SIZE":64,\
       "TRAIN_START":1000,\
       "MEMORY_SIZE":100000,\
       "ADD_NAME":()
@@ -98,7 +101,7 @@ if __name__ == "__main__":
     show_media_info = True
     goal = (0.5,0.0)
     
-    if args.train == True:
+    if args.train.upper() == 'TRAIN':
       for e in range(EPISODES):
         # Episode initialization
         done = False
@@ -134,52 +137,52 @@ if __name__ == "__main__":
             scores_raw.append(score)
             epsilons.append(agent.epsilon)
             losses.append(np.mean(loss_list))
-            # if e % save_freq == 0:
-              # plt.clf()
-              # plt.subplot(311)
-              # plt.plot(scores_avg, 'b')
-              # plt.plot(scores_raw, 'b', alpha=0.8, linewidth=0.5)
-              # plt.xlabel('episode'); plt.ylabel('average score'); plt.grid()
-              # plt.title(FILENAME)
-              # plt.subplot(312)
-              # plt.plot(epsilons, 'b')
-              # plt.xlabel('episode'); plt.ylabel('epsilon'); plt.grid()
-              # plt.subplot(313)
-              # plt.plot(losses, 'b')
-              # plt.xlabel('episode'); plt.ylabel('losses') ;plt.grid()
-              # plt.savefig(workspace_path + "\\result\\img\\" + FILENAME + "_TF.jpg", dpi=100)
+            if e % save_freq == 0:
+              plt.clf()
+              plt.subplot(311)
+              plt.plot(scores_avg, 'b')
+              plt.plot(scores_raw, 'b', alpha=0.8, linewidth=0.5)
+              plt.xlabel('episode'); plt.ylabel('average score'); plt.grid()
+              plt.title(FILENAME)
+              plt.subplot(312)
+              plt.plot(epsilons, 'b')
+              plt.xlabel('episode'); plt.ylabel('epsilon'); plt.grid()
+              plt.subplot(313)
+              plt.plot(losses, 'b')
+              plt.xlabel('episode'); plt.ylabel('losses') ;plt.grid()
+              plt.savefig(workspace_path + "\\result\\img\\" + FILENAME + "_TF.jpg", dpi=100)
             # 이동 평균이 0 이상일 때 종료
             if score_avg > END_SCORE:
-              # agent.save_model(workspace_path + "\\result\\save_model\\")
-              # plt.clf()
-              # plt.subplot(311)
-              # plt.plot(scores_avg, 'b')
-              # plt.plot(scores_raw, 'b', alpha=0.8, linewidth=0.5)
-              # plt.xlabel('episode'); plt.ylabel('average score'); plt.grid()
-              # plt.title(FILENAME)
-              # plt.subplot(312)
-              # plt.plot(epsilons, 'b')
-              # plt.xlabel('episode'); plt.ylabel('epsilon'); plt.grid()
-              # plt.subplot(313)
-              # plt.plot(losses, 'b')
-              # plt.xlabel('episode'); plt.ylabel('losses') ;plt.grid()
-              # plt.savefig(workspace_path + "\\result\\img\\" + FILENAME + "_TF.jpg", dpi=100)
+              agent.save_model(workspace_path + "\\result\\save_model\\")
+              plt.clf()
+              plt.subplot(311)
+              plt.plot(scores_avg, 'b')
+              plt.plot(scores_raw, 'b', alpha=0.8, linewidth=0.5)
+              plt.xlabel('episode'); plt.ylabel('average score'); plt.grid()
+              plt.title(FILENAME)
+              plt.subplot(312)
+              plt.plot(epsilons, 'b')
+              plt.xlabel('episode'); plt.ylabel('epsilon'); plt.grid()
+              plt.subplot(313)
+              plt.plot(losses, 'b')
+              plt.xlabel('episode'); plt.ylabel('losses') ;plt.grid()
+              plt.savefig(workspace_path + "\\result\\img\\" + FILENAME + "_TF.jpg", dpi=100)
               end = True
               break
         if end == True:
-          # np.save(workspace_path + "\\result\\data\\" + FILENAME + "_TF_scores_avg",scores_avg)
-          # np.save(workspace_path + "\\result\\data\\" + FILENAME + "_TF_scores_raw",scores_raw)
-          # np.save(workspace_path + "\\result\\data\\" + FILENAME + "_TF_losses",losses)
+          np.save(workspace_path + "\\result\\data\\" + FILENAME + "_TF_scores_avg",scores_avg)
+          np.save(workspace_path + "\\result\\data\\" + FILENAME + "_TF_scores_raw",scores_raw)
+          np.save(workspace_path + "\\result\\data\\" + FILENAME + "_TF_losses",losses)
           break
     
-    else: # Test
+    elif args.train.upper() == 'TEST': # Test
       agent.load_model(workspace_path + "\\result\\save_model\\")
-      for e in range(10):
+      for e in range(5):
         # Episode initialization
         done = False; state = env.reset(); score = 0
         while not done:
           env.render()
-          action = agent.get_action(state)
+          action = agent.choose_action(state)
           next_state, reward, done, info = env.step(action)
           score += reward
           state = next_state
@@ -187,5 +190,7 @@ if __name__ == "__main__":
             score_avg = 0.9 * score_avg + 0.1 * score if score_avg != 0 else score
             print("episode: {0:3d} | score avg: {1:3.2f} |"
               .format(e, score_avg))
+    else:
+      print(args.train)
     env.close()
     print("End")
