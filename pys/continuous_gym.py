@@ -19,7 +19,7 @@ from configs.nn_cfg import *  # Network Model Configuration
 
 gpu_memory_limiter(1024*2)
 parser = argparse.ArgumentParser()
-parser.add_argument('--env_name', type=str,   default="MountainCarContinuous-v0")
+parser.add_argument('--env_name', type=str,   default="LunarLanderContinuous-v2")
 parser.add_argument('--train',    type=str,   default='TRAIN')
 args = parser.parse_args()
 
@@ -63,7 +63,7 @@ if __name__ == "__main__":
       # "REWARD_FUNC":reward_function,\
       # "DONE_FUNC":done_function,\
     },\
-    "BATCH_SIZE":8,\
+    "BATCH_SIZE":64,\
     "TRAIN_START":2000,\
     "MEMORY_SIZE":50000,\
     "ADD_NAME":()
