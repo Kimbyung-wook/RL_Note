@@ -8,13 +8,13 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 import numpy as np
 import urllib.request
-urllib.request.urlretrieve('http://www.atarimania.com/roms/Roms.rar','Roms.rar')
-!pip install unrar
-!unrar x Roms.rar
-!mkdir rars
-!mv HC\ ROMS.zip   rars
-!mv ROMS.zip  rars
-!python -m atari_py.import_roms rars
+# urllib.request.urlretrieve('http://www.atarimania.com/roms/Roms.rar','Roms.rar')
+# !pip install unrar
+# !unrar x Roms.rar
+# !mkdir rars
+# !mv HC\ ROMS.zip   rars
+# !mv ROMS.zip  rars
+# !python -m atari_py.import_roms rars
 
 def create_q_model(num_actions):
     # Network defined by the Deepmind paper
@@ -78,6 +78,7 @@ def train():
     frame_count = 0
     # Max Frame count to stop the learning
     max_frame_count = 2000000
+    # max_frame_count = 10001
     # Number of frames for exploration
     epsilon_greedy_frames = 1000000.0
     # Maximum replay length
@@ -200,7 +201,7 @@ def train():
 def save_model_rewards(model, episode_reward_history, save_path):
     model_save_path = '/'.join((save_path, 'model'))
     rewards_history_path = '/'.join((save_path, 'rewards.npy'))
-
+    print('Model save : ',model_save_path)
     model.save(model_save_path)
     np.save(rewards_history_path, episode_reward_history)
 
@@ -216,7 +217,8 @@ def plot_rewards(episode_reward_history):
 
 
 def main():
-    breakout_drive_path = '/DeepQNetwork-Atari-Breakout'
+    # breakout_drive_path = '/DeepQNetwork-Atari-Breakout'
+    breakout_drive_path = './tmp'
 
     # train the model
     print('Training the model...')
