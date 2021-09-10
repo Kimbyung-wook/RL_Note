@@ -7,14 +7,27 @@ from tensorflow.keras import layers
 import tensorflow as tf
 import matplotlib.pyplot as plt
 import numpy as np
-import urllib.request
-urllib.request.urlretrieve('http://www.atarimania.com/roms/Roms.rar','Roms.rar')
-!pip install unrar
-!unrar x Roms.rar
-!mkdir rars
-!mv HC\ ROMS.zip   rars
-!mv ROMS.zip  rars
-!python -m atari_py.import_roms rars
+# import urllib.request
+# urllib.request.urlretrieve('http://www.atarimania.com/roms/Roms.rar','Roms.rar')
+# !pip install unrar
+# !unrar x Roms.rar
+# !mkdir rars
+# !mv HC\ ROMS.zip   rars
+# !mv ROMS.zip  rars
+# !python -m atari_py.import_roms rars
+gpus = tf.config.experimental.list_physical_devices('GPU')
+if gpus:
+  try:
+    # Currently, memory growth needs to be the same across GPUs
+    for gpu in gpus:
+      tf.config.experimental.set_memory_growth(gpu, True)
+    logical_gpus = tf.config.experimental.list_logical_devices('GPU')
+    print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
+  except RuntimeError as e:
+    # Memory growth must be set before GPUs have been initialized
+    print(e)
+# tf.config.gpu.set_per_process_memory_fraction(0.75)
+# tf.config.gpu.set_per_process_memory_growth(True)
 
 def create_q_model(num_actions):
     # Network defined by the Deepmind paper
