@@ -55,7 +55,7 @@ def load_model(save_path):
 
 
 def main():
-    breakout_save_path = '/DeepQNetwork-Atari-Breakout'
+    breakout_save_path = './tmp'
 
     # loading the model
     print('Loading the model...')

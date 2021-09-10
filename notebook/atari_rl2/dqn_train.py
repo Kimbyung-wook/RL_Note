@@ -91,6 +91,7 @@ def train():
     frame_count = 0
     # Max Frame count to stop the learning
     max_frame_count = 2000000
+    # max_frame_count = 10001
     # Number of frames for exploration
     epsilon_greedy_frames = 1000000.0
     # Maximum replay length
@@ -213,7 +214,7 @@ def train():
 def save_model_rewards(model, episode_reward_history, save_path):
     model_save_path = '/'.join((save_path, 'model'))
     rewards_history_path = '/'.join((save_path, 'rewards.npy'))
-
+    print('Model save : ',model_save_path)
     model.save(model_save_path)
     np.save(rewards_history_path, episode_reward_history)
 
@@ -229,7 +230,8 @@ def plot_rewards(episode_reward_history):
 
 
 def main():
-    breakout_drive_path = '/DeepQNetwork-Atari-Breakout'
+    # breakout_drive_path = '/DeepQNetwork-Atari-Breakout'
+    breakout_drive_path = './tmp'
 
     # train the model
     print('Training the model...')
