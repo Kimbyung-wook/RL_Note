@@ -29,12 +29,25 @@ class PPOAgent1:
         for item in cfg["ADD_NAME"]:
             self.filename = self.filename + '_' + item
         
+        # Experience Replay
+        self.rollout = {
+            'state':None,
+            'action':None,
+            'reward':None,
+            'next_state':None,
+            'done':None,
+            'goal':None,
+            'prob':None
+        }
+
         # Hyper params for learning
         self.discount_factor = 0.99
         self.actor_lr   = 0.001
         self.critic_lr  = 0.002
         self.tau        = 0.005
         self.clip_param = 0.2
+        self.beta       = 1.0
+        self.d_targ     = 0.01
 
         # Networks
         cfg['RL']['NETWORK']['ACTOR']['ACTION_TYPE'] = 'STOCHASTIC'
@@ -66,7 +79,16 @@ class PPOAgent1:
         dist = tfd.Categorical(probs=prob, dtype=tf.float32)
         action = dist.sample().numpy()[0]
         # Exploration and Exploitation
-        return np.clip(action, a_min=-1.0, a_max=1.0)
+        # return np.clip(action, a_min=-1.0, a_max=1.0)
+        
+        # Discrete
+        prob = self.actor(state)
+        dist = tfd.Categorical(probs=prob, dtype=tf.float32)
+        action = dist.sample()
+        logprob_all = tf.nn.log_softmax(dist)
+        logprob_t = tf.reduce_sum(tf.one_hot(action, self.action_size)*logprob_all, axis=1)
+        value_t = self.critic(state)
+        return action, logprob_t, value_t
 
     def remember(self, state, action, reward, next_state, done, goal=None):
         states      = np.array(state,           dtype=np.float32)
@@ -74,7 +96,7 @@ class PPOAgent1:
         reward      = np.array([reward],        dtype=np.float32)
         done        = np.array([done],          dtype=np.float32)
         next_state  = np.array(next_state,      dtype=np.float32)
-        transition  = (states, action, reward, next_state , done)
+        transition  = (states, action, reward, next_state, done)
         self.memory.append(transition)
         return
 
@@ -96,29 +118,32 @@ class PPOAgent1:
     def _train_model(self):
         self.train_idx = self.train_idx + 1
         # Sampling from the memory
-        if self.er_type == "ER" or self.er_type == "HER":
-            mini_batch = self.memory.sample(self.batch_size)
-        elif self.er_type == "PER":
-            mini_batch, idxs, is_weights = self.memory.sample(self.batch_size)
+        # if self.er_type == "ER" or self.er_type == "HER":
+        #     mini_batch = self.memory.sample(self.batch_size)
+        # elif self.er_type == "PER":
+        #     mini_batch, idxs, is_weights = self.memory.sample(self.batch_size)
 
-        states      = self.rollout['state']
-        actions     = self.rollout['action']
-        rewards     = self.rollout['reward']
-        next_states = self.rollout['next_state']
-        dones       = self.rollout['done']
+        states      = tf.convert_to_tensor(self.rollout['state'])
+        actions     = tf.convert_to_tensor(self.rollout['action'])
+        rewards     = tf.convert_to_tensor(self.rollout['reward'])
+        next_states = tf.convert_to_tensor(self.rollout['next_state'])
+        dones       = tf.convert_to_tensor(self.rollout['done'])
+        prev_prob   = tf.convert_to_tensor(self.rollout['prob'])
+
         
         if self.show_media_info == False:
             self.show_media_info = True
             print('Start to train, check batch shapes')
-            print('**** shape of mini_batch', np.shape(mini_batch),type(mini_batch))
             print('**** shape of states', np.shape(states),type(states))
             print('**** shape of actions', np.shape(actions),type(actions))
             print('**** shape of rewards', np.shape(rewards),type(rewards))
             print('**** shape of dones', np.shape(dones),type(dones))
             if self.er_type == "HER":
-                goals = tf.convert_to_tensor(np.array([sample[5] for sample in mini_batch]))
+                goals = tf.convert_to_tensor(self.rollout['goal'])
                 print('**** shape of goals', np.shape(goals),type(goals))
         # print(' shape : ',np.shape())
+
+        returns = self._get_return(rewards, dones)
 
         actor_params  = self.actor.trainable_variables
         critic_params = self.critic.trainable_variables
@@ -126,18 +151,39 @@ class PPOAgent1:
             tape1.watch(actor_params)
             tape2.watch(critic_params)
             # Get Critic loss
-            policys = self.actor(states, training=True)
-            values  = self.critic(states, training=True)
-            advs    = policys - values
-            critic_loss = 0.5 * tf.loss.MSE(discounted_rewards, values)
+            values      = self.critic(states, training=True)
+            critic_loss = tf.reduce_mean(tf.square(returns - values))
             # Get Actor loss
-            entropy = tf.reduce_mean(- prev_probs * tf.math.log(probs))
-            ratios  = tf.math.divide(probs, prev_probs)
-            ratios_clipped = tf.where(advs > 0, 1.0 + self.clip_param, 1.0 - self.clip_param)
-            s1      = ratios         * advs
-            s2      = ratios_clipped * advs
-            surrogate   = tf.math.minimum(s1,s2)
-            actor_loss  = -tf.reduce_mean(surrogate - critic_loss + 0.001 * entropy)
+            prob            = self.actor(states, training=True)
+            dist            = tfd.Categorical(probs=prob, dtype=tf.float32)
+            logprobs        = dist.log_prob(actions)
+            prev_dist       = tfd.Categorical(probs=prev_prob, dtype=tf.float32)
+            prev_logprobs   = prev_dist.log_prob(actions)
+            ratios  = tf.exp(logprobs - prev_logprobs)
+            advs    = self._get_gae(rewards, dones)
+            if 'CPI' in self.rl_type: # Surrogate Objective - Conservative policy iteration
+                actor_loss = ratios * advs
+            elif 'KL':
+                kl = tf.reduce_mean(prev_logprobs - logprobs)
+                kl = tf.reduce_sum(kl)
+                actor_loss = ratios * advs - self.beta * kl
+                # Update KL-penalty coefficient, beta
+                if kl < self.d_targ / 1.5:
+                    self.beta = self.beta / 2.0
+                elif kl > self.d_targ * 1.5:
+                    self.beta = self.beta * 2.0
+            else:
+                ratios_clipped = tf.where(advs > 0, 1.0 + self.clip_param, 1.0 - self.clip_param)
+                s1          = ratios         * advs
+                s2          = ratios_clipped * advs
+                surrogate   = tf.math.minimum(s1,s2)
+                if 'CLIP' in self.rl_type: # Clipped Surrogate Objective
+                    actor_loss  = -tf.reduce_mean(surrogate)
+                elif 'SHARED' in self.rl_type: # Clipped Surrogate Objective
+                    entropy = tf.reduce_mean(- prev_logprobs * logprobs)
+                    actor_loss  = -tf.reduce_mean(surrogate - critic_loss + 0.001 * entropy)
+                else: # Clipped Surrogate Objective
+                    actor_loss  = -tf.reduce_mean(surrogate)
         
         critic_loss_out = critic_loss.numpy()
         critic_params = self.critic.trainable_variables
