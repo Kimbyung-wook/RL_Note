@@ -41,6 +41,10 @@ class ReplayMemory():
   def show(self):
     print(self.buffer)
 
+  def reset(self):
+    self.buffer = []
+    self.buffer_idx = 0
+
 class ReplayMemory1():
   '''
   This is OpenAI baseline style-Replay Memory
@@ -89,6 +93,10 @@ class ReplayMemory1():
   def sample(self, n:int):
     idxes = [random.randint(0, len(self._buffer)-1) for _ in range(n)]
     return self._encode_sample(idxes=idxes)
+
+  def reset(self):
+    self._buffer = []
+    self._buffer_idx = 0
 
 class ReplayMemory_nparray5():
   def __init__(self, capacity:int)->None:

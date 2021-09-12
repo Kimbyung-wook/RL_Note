@@ -26,9 +26,9 @@ class HindsightMemory():
         done = bool(sample[4])
         if done:
             # print('Episode end           : buffer size : ', len(self.buffer), '/ and a epi steps : ', len(self.episode_buffer))
-            self.generate_HER_transition()
+            self._generate_HER_transition()
             # print('after HER operation   : buffer size : ', len(self.buffer), '/ and a epi steps : ', len(self.episode_buffer))
-            self.reset_current_episode()
+            self._reset_current_episode()
             # print('reset current episode : buffer size : ', len(self.buffer), '/ and a epi steps : ', len(self.episode_buffer))
 
     def add_transition(self, sample:list) -> None:
@@ -58,23 +58,31 @@ class HindsightMemory():
     def __len__(self):
         return len(self.buffer)
 
+    def reset(self):
+        self.buffer = []
+        self.buffer_idx = 0
+        self.episode_buffer = []
+        self.episode_buffer_idx = 0
+
     '''
     HER Operation
     '''
 
-    def add_her_transition(self, sample:list) -> None:
+    def _add_her_transition(self, sample:list) -> None:
         '''
             append a transition to current episode buffer
         '''
         self.episode_buffer += [sample]
         self.episode_buffer_idx += 1
+        return
 
-    def reset_current_episode(self) -> None:
+    def _reset_current_episode(self) -> None:
         '''
             reset current episode buffer
         '''
         self.episode_buffer = []
         self.episode_buffer_idx = 0
+        return 
 
     def _sample_additional_goal(self):
         '''
@@ -99,7 +107,7 @@ class HindsightMemory():
         # print('additional_goals ',additional_goals)
         return additional_goals
 
-    def generate_HER_transition(self) -> None:
+    def _generate_HER_transition(self) -> None:
         # Replay current episode
         for episode in self.episode_buffer:
             state       = episode[0]
@@ -119,6 +127,7 @@ class HindsightMemory():
                 transition = (state, action, new_reward, next_state, do_achieve, now_goal)
                 # Store the transition to Buffer
                 self.add_transition(transition)
+        return
 
 
 

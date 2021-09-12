@@ -17,8 +17,8 @@ class ProportionalPrioritizedMemory:  # stored as ( s, a, r, s_ ) in SumTree
     abs_err_upper = 1.000
 
     def __init__(self, capacity):
-        self.tree = SumTree(capacity)
         self.capacity = capacity
+        self.tree = SumTree(self.capacity)
 
     def _get_priority(self, error):
         '''
@@ -74,3 +74,6 @@ class ProportionalPrioritizedMemory:  # stored as ( s, a, r, s_ ) in SumTree
 
     def __len__(self):
         return self.tree.n_entries
+
+    def reset(self):
+        self.tree = SumTree(self.capacity)
